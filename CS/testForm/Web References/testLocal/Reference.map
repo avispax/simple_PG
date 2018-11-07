@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<DiscoveryClientResultsFile xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <Results>
+    <DiscoveryClientResult referenceType="System.Web.Services.Discovery.ContractReference" url="file:///C:/work/SB/003 受領資料/IF資料/新交換機CDR_SO仕様_20181001/SO投入API仕様/psxapi-r11_00_00.wsdl" filename="psxapi-r11_00_00.wsdl" />
+  </Results>
+</DiscoveryClientResultsFile>

@@ -3,15 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2010
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "csDll", "csDll\csDll.csproj", "{26C8116A-341F-4BD8-84A4-7AB61C2DCA11}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cppCLR", "cppCLR\cppCLR.vcxproj", "{C4379327-E011-4752-AF98-CFDE61B0E0EF}"
-	ProjectSection(ProjectDependencies) = postProject
-		{26C8116A-341F-4BD8-84A4-7AB61C2DCA11} = {26C8116A-341F-4BD8-84A4-7AB61C2DCA11}
-	EndProjectSection
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cTest", "cTest\cTest.vcxproj", "{BA139DFE-76B2-4BC6-8B1B-DDA78D39A7BF}"
-	ProjectSection(ProjectDependencies) = postProject
-		{C4379327-E011-4752-AF98-CFDE61B0E0EF} = {C4379327-E011-4752-AF98-CFDE61B0E0EF}
-	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -41,20 +33,6 @@ Global
 		{26C8116A-341F-4BD8-84A4-7AB61C2DCA11}.Release|Win32.ActiveCfg = Release|Any CPU
 		{26C8116A-341F-4BD8-84A4-7AB61C2DCA11}.Release|x64.ActiveCfg = Release|Any CPU
 		{26C8116A-341F-4BD8-84A4-7AB61C2DCA11}.Release|x86.ActiveCfg = Release|Any CPU
-		{C4379327-E011-4752-AF98-CFDE61B0E0EF}.Debug|Any CPU.ActiveCfg = Debug|Win32
-		{C4379327-E011-4752-AF98-CFDE61B0E0EF}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
-		{C4379327-E011-4752-AF98-CFDE61B0E0EF}.Debug|Mixed Platforms.Build.0 = Debug|Win32
-		{C4379327-E011-4752-AF98-CFDE61B0E0EF}.Debug|Win32.ActiveCfg = Debug|Win32
-		{C4379327-E011-4752-AF98-CFDE61B0E0EF}.Debug|Win32.Build.0 = Debug|Win32
-		{C4379327-E011-4752-AF98-CFDE61B0E0EF}.Debug|x64.ActiveCfg = Debug|Win32
-		{C4379327-E011-4752-AF98-CFDE61B0E0EF}.Debug|x86.ActiveCfg = Debug|Win32
-		{C4379327-E011-4752-AF98-CFDE61B0E0EF}.Release|Any CPU.ActiveCfg = Release|Win32
-		{C4379327-E011-4752-AF98-CFDE61B0E0EF}.Release|Mixed Platforms.ActiveCfg = Release|Win32
-		{C4379327-E011-4752-AF98-CFDE61B0E0EF}.Release|Mixed Platforms.Build.0 = Release|Win32
-		{C4379327-E011-4752-AF98-CFDE61B0E0EF}.Release|Win32.ActiveCfg = Release|Win32
-		{C4379327-E011-4752-AF98-CFDE61B0E0EF}.Release|Win32.Build.0 = Release|Win32
-		{C4379327-E011-4752-AF98-CFDE61B0E0EF}.Release|x64.ActiveCfg = Release|Win32
-		{C4379327-E011-4752-AF98-CFDE61B0E0EF}.Release|x86.ActiveCfg = Release|Win32
 		{BA139DFE-76B2-4BC6-8B1B-DDA78D39A7BF}.Debug|Any CPU.ActiveCfg = Debug|Win32
 		{BA139DFE-76B2-4BC6-8B1B-DDA78D39A7BF}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
 		{BA139DFE-76B2-4BC6-8B1B-DDA78D39A7BF}.Debug|Mixed Platforms.Build.0 = Debug|Win32

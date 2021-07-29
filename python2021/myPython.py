@@ -2,7 +2,8 @@ import difflib
 
 
 class myDebug:
-    debugMode = True
+    def __init__(self):
+        self.debugMode = False
 
     def printPositions(self, current, next):
         if not self.debugMode:
@@ -27,43 +28,45 @@ class myDebug:
 
 
 class myData:
-    type = ""
-    headers = []
-    manager = {}
-    entities = {}
-    relations = {}
-    comments = {}
-    shapes = {}
-    lines = {}
-    others = {}
+
+    def __init__(self):
+        self.type = ""
+        self.headers = []
+        self.manager = {}
+        self.entities = {}
+        self.relations = {}
+        self.comments = {}
+        self.shapes = {}
+        self.lines = {}
+        self.others = {}
 
     def setData(self, data):
 
-        if self.type == "[Manager]\n":
+        if self.type == '[Manager]\n':
             self.manager = data
 
-        elif self.type == "[Entity]\n":
+        elif self.type == '[Entity]\n':
             # PName が物理名（テーブル名）なので、それをキーとしてdictに登録する。被らないだろうし。
-            self.entities[data["PName="]] = data
+            self.entities[data['PName=']] = data
 
-        elif self.type == "[Relation]\n":
+        elif self.type == '[Relation]\n':
             # Entity1とEntity2でリレーションを形成しているので、その2つを合成してキーに採用する。A5M2は同一場所に同一コメントの設定ができるツールなのでそれを考慮する。
-            tempKey = self.getDictKey(str(data["Entity1="]) + str(data["Entity2="]), self.relations)
+            tempKey = self.getDictKey(str(data['Entity1=']) + str(data['Entity2=']), self.relations)
             self.relations[tempKey] = data
 
-        elif self.type == "[Comment]\n":
+        elif self.type == '[Comment]\n':
             # コメントは同じ内容のコメントが多いので、値の全部をキーにして取り扱う。もはやキーだけでも成り立つのでは。
-            tempKey = self.getDictKey(",".join(map(str, data.values())), self.comments)
+            tempKey = self.getDictKey(','.join(map(str, data.values())), self.comments)
             self.comments[tempKey] = data
 
-        elif self.type == "[Shape]\n":
+        elif self.type == '[Shape]\n':
             # [Comment]と同様。値を全部キーにしてしまおう
-            tempKey = self.getDictKey(",".join(map(str, data.values())), self.shapes)
+            tempKey = self.getDictKey(','.join(map(str, data.values())), self.shapes)
             self.shapes[tempKey] = data
 
-        elif self.type == "[Line]\n":
+        elif self.type == '[Line]\n':
             # [Comment]と同様。値を全部キーにしてしまおう
-            tempKey = self.getDictKey(",".join(map(str, data.values())), self.lines)
+            tempKey = self.getDictKey(','.join(map(str, data.values())), self.lines)
             self.lines[tempKey] = data
 
         else:
@@ -76,23 +79,25 @@ class myData:
         # 識別子は適当。そもそも異常な状況なので最後に一覧として出すし。識別子が被らなければ何でもよい。日時や配列数でも。
         # ちなみにA5M2のバージョン2.14 以降は項目[ZOrder]が新設されているので、それっぽいキー項目+ZOrderで必ず一意になるため、そのときにはこの関数は死蔵してよい。
         if tempKey in data:
-            return tempKey + "_" + str(len(data))
+            return tempKey + '_' + str(len(data))
         else:
             return tempKey
 
 
 class myFactory:
-    type = ""
+
+    def __init__(self):
+        self.type = ''
 
     def create(self, data):
 
-        if self.type == "[Manager]\n":
+        if self.type == '[Manager]\n':
             # [Manager]部。アプリ全体的な情報。主にタブ構成とか
             return self.createManager(data)
-        elif self.type == "[Entity]\n":
+        elif self.type == '[Entity]\n':
             # [Entity]部。いわゆるテーブル情報。
             return self.craeteEntity(data)
-        elif self.type in ["[Relation]\n", "[Comment]\n", "[Shape]\n", "[Line]\n"]:
+        elif self.type in ('[Relation]\n', '[Comment]\n', '[Shape]\n', '[Line]\n'):
             # いまのところわかっているやつ全部。[Relation]と[Comment]と[Shape]、[Line]。
             return self.createDict(data)
         # elif self.type in ["[Line]\n"]:
@@ -107,73 +112,65 @@ class myFactory:
         tempDict = {}
 
         for l in data:
-            tempDict[l[:l.find("=") + 1]] = l[l.find("=") + 1:]
+            tempDict[l[:l.find('=') + 1]] = l[l.find('=') + 1:]
 
         return tempDict
 
     def craeteEntity(self, data):
         # [Entity]部。いわゆるテーブル情報。
 
-        tempEntity = {"Field": None, "Index": None}
+        tempEntity = {"Field": None, "Index": None, 'BaseInfo': None}
 
-        tempField = {}
-        tempFieldPos = 0
-
-        tempIndex = {}
-        tempIndexPos = 0
+        tempField = []
+        tempIndex = []
+        tempBaseInfo = []
 
         for i, l in enumerate(data):
 
-            if l.startswith("Field"):
+            if l.startswith('Field'):
 
-                # Field を物理名をキー項目としてdictに登録。
-                tempStr = l.split(",")
+                tempField.append(l)
 
-                # 先頭にフィールドの順番を設定
-                tempField[tempStr[1]] = str(tempFieldPos) + "," + l
-
-            elif l.startswith("IndexOption"):
+            elif l.startswith('IndexOption'):
                 continue
 
-            elif l.startswith("Index"):
-                # 最初の「=」から次の「=」までにある物理名をキー項目としてdictに登録。Valueとしては、二個目の=の次から全部と、IndexOption全部
-                tempPos = l.find("=")
-                tempPos2 = l.find("=", tempPos+1)
-                tempIndex[l[tempPos + 1: tempPos2]] = str(tempIndexPos) + l[tempPos2 + 1:] + "," + data[i + 1]
+            elif l.startswith('Index'):
+                tempIndex.append(l + ',' + data[i + 1])
 
+            elif l.startswith('PName'):
+                tempEntity['PName='] = l[l.find('=') + 1:]
             else:
-                tempEntity[l[:l.find("=") + 1]] = l[l.find("=") + 1:]
+                tempBaseInfo.append(l)
 
         # 最後にFieldとIndexを埋める
-        tempEntity["Field"] = tempField
-        tempEntity["Index"] = tempIndex
+        tempEntity['Field'] = tempField
+        tempEntity['Index'] = tempIndex
+        tempEntity['BaseInfo'] = tempBaseInfo
 
         return tempEntity
 
     def createManager(self, data):
         # [Manager]部。アプリ全体的な情報。主にタブ構成とか
 
-        tempInfo = {"PageInfo": None}
+        tempInfo = {'PageInfo': None, 'BaseInfo': None}
 
-        tempPageInfo = {}
-        tempPagePos = 0
+        tempPageInfo = []
+
+        tempBaseInfo = []
 
         for l in data:
-            if l.startswith("PageInfo"):
-                # PageInfoを、タブの名前をキー項目としてdictに登録。Value部の先頭に位置情報を付与する。dict型の選定理由は検索の容易さから。
-                tempPos = l.find("\"")
-                tempPos2 = l.find("\"", tempPos + 1)
-                tempPageInfo[l[tempPos + 1: tempPos2]] = str(tempPagePos) + "," + l[tempPos2 + 2:]
-                tempPagePos = tempPagePos + 1
-            elif l.startswith("Page"):
+            if l.startswith('PageInfo'):
+                tempPageInfo.append(l)
+            elif l.startswith('Page'):
                 # 一見重要なこいつ、PageInfoさえあれば要らない子だったわ
                 continue
             else:
                 # 上記以外は全部ここ。「=」まででキーとする。キレイな整形もめんどいので。
-                tempInfo[l[:l.find("=")+1]] = l[l.find("=")+1:]
+                tempBaseInfo.append(l)
 
-        # 最後にPageを埋める
-        tempInfo["PageInfo"] = tempPageInfo
+        # 最後に各情報を埋める
+        tempInfo['PageInfo'] = tempPageInfo
+        tempInfo['BaseInfo'] = tempBaseInfo
 
         return tempInfo
 
@@ -232,30 +229,68 @@ def generateData(fileName):
     return data
 
 
-def diff(d0, d1):
+def checkDiffLib(l1, l2):
+    matcher = difflib.SequenceMatcher(None, l1, l2)
+
+    tempResults = []
+
+    for opcode in matcher.get_opcodes():
+        if opcode[0] in ('replace', 'insert', 'delete'):
+            tempResults.append(opcode)
+
+    return tempResults
+
+
+def myDiff(d0, d1):
 
     # https://teratail.com/questions/171217
 
-    # header
-    print(set(d0.headers) - set(d1.headers))
+    # Header
+    results = {'header': checkDiffLib(d0.headers, d1.headers)}
+    print(results)
 
-    a = d0.manager["PageInfo"]
-    b = d1.manager["PageInfo"]
+    # Manager
+    results['ManagerBase'] = checkDiffLib(d0.manager['BaseInfo'], d1.manager['BaseInfo'])
+    print(results)
 
-    x = a.items() - b.items()
-    #x = d0.manager.items() - d1.manager.items()
-    print(x)
+    # Manager2 : タブ情報部分
+    results['ManagerPageInfo'] = checkDiffLib(d0.manager['PageInfo'], d1.manager['PageInfo'])
+    print(results)
+
+    # Entity : テーブル情報そもそもの有無を keys を利用して判定
+    results['EntityKeys'] = checkDiffLib(list(d0.entities.keys()), list(d1.entities.keys()))
+    print(results)
+
+    # Entity2 : とりあえず両方に同じテーブル名があるやつを対象に、中身の一致確認
+    results['Entities'] = None
+    tempResults = {}
+    for e in d0.entities:
+        if e in d1.entities:
+            # ここにきたら両データに存在するってことなので、比較処理まで可能。
+            tempR2 = {'EntityBase': None, 'Fields': None, 'Index': None}
+            tempR2['EntityBase'] = checkDiffLib(d0.entities[e]['BaseInfo'], d1.entities[e]['BaseInfo'])
+            tempR2['Fields'] = checkDiffLib(d0.entities[e]['Field'], d1.entities[e]['Field'])
+            tempR2['Index'] = checkDiffLib(d0.entities[e]['Index'], d1.entities[e]['Index'])
+            # 辞書作っておいてあれですが、上記3項目が全部一致してたら格納しなくていいや
+            if not len(tempR2['EntityBase']) == len(tempR2['Fields']) == len(tempR2['Index']) == 0:
+                tempResults[e] = tempR2
+
+    results['Entities'] = tempResults
+
+    # Relation
+
+    print(results)
 
 
 def main(files):
     print(files)
     d0 = generateData(files[0])
     d1 = generateData(files[1])
-    diff(d0, d1)
-    print("main - end")
+    myDiff(d0, d1)
+    print('main - end')
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
 
     # files = ["IYNS新お届け_ER図.a5er", "IYNS_ER図_2.a5er"]
     files = ["F:\\work\\simple_PG\\python2021\\00.a5er",

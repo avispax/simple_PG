@@ -1,3 +1,6 @@
+import difflib
+
+
 class myDebug:
     debugMode = True
 
@@ -150,7 +153,7 @@ class myFactory:
     def createManager(self, data):
         # [Manager]部。アプリ全体的な情報。主にタブ構成とか
 
-        tempInfo = {"Page": None}
+        tempInfo = {"PageInfo": None}
 
         tempPageInfo = {}
         tempPagePos = 0
@@ -170,7 +173,7 @@ class myFactory:
                 tempInfo[l[:l.find("=")+1]] = l[l.find("=")+1:]
 
         # 最後にPageを埋める
-        tempInfo["Page"] = tempPageInfo
+        tempInfo["PageInfo"] = tempPageInfo
 
         return tempInfo
 
@@ -229,17 +232,33 @@ def generateData(fileName):
     return data
 
 
+def diff(d0, d1):
+
+    # https://teratail.com/questions/171217
+
+    # header
+    print(set(d0.headers) - set(d1.headers))
+
+    a = d0.manager["PageInfo"]
+    b = d1.manager["PageInfo"]
+
+    x = a.items() - b.items()
+    #x = d0.manager.items() - d1.manager.items()
+    print(x)
+
+
 def main(files):
     print(files)
     d0 = generateData(files[0])
     d1 = generateData(files[1])
+    diff(d0, d1)
     print("main - end")
 
 
 if __name__ == "__main__":
 
     # files = ["IYNS新お届け_ER図.a5er", "IYNS_ER図_2.a5er"]
-    files = ["F:\\work\\simple_PG\\python2021\\2021_0.a5er",
-             "F:\\work\\simple_PG\\python2021\\2021_2.a5er"]
+    files = ["F:\\work\\simple_PG\\python2021\\00.a5er",
+             "F:\\work\\simple_PG\\python2021\\01.a5er"]
 
     main(files)

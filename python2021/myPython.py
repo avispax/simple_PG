@@ -1,4 +1,5 @@
 import difflib
+import datetime
 
 
 class myDebug:
@@ -56,25 +57,21 @@ class myData:
 
         elif self.type == '[Comment]\n':
             # コメントは同じ内容のコメントが多いので、値の全部をキーにして取り扱う。もはやキーだけでも成り立つのでは。
-            #tempKey = self.getDictKey(','.join(map(str, data.values())), self.comments)
             tempKey = self.getDictKey(''.join(map(str, data)), self.comments)
             self.comments[tempKey] = data
 
         elif self.type == '[Shape]\n':
             # [Comment]と同様。値を全部キーにしてしまおう
-            #tempKey = self.getDictKey(','.join(map(str, data.values())), self.shapes)
             tempKey = self.getDictKey(''.join(map(str, data)), self.shapes)
             self.shapes[tempKey] = data
 
         elif self.type == '[Line]\n':
             # [Comment]と同様。値を全部キーにしてしまおう
-            #tempKey = self.getDictKey(','.join(map(str, data.values())), self.lines)
             tempKey = self.getDictKey(''.join(map(str, data)), self.lines)
             self.lines[tempKey] = data
 
         else:
             # ここはもうなにが来るかわからんので、素直にType名と識別子でキーを作って、他を全部入れる。
-            #tempKey = self.getDictKey(self.type, self.others)
             tempKey = self.getDictKey(''.join(map(str, data)), self.others)
             self.others[tempKey] = data
 
@@ -222,13 +219,13 @@ def generateData(fileName):
     # いろいろ初期処理
     currentPos = 0  # 読み込みするカーソル（概念）の位置
     nextSeparator = myIndex("\n", data0, currentPos)    # ブロックの終わり位置
-    data = myData()  # 格納用クラスを宣言
+    myDataClass = myData()  # 格納用クラスを宣言
 
     debug.printPositions(currentPos, nextSeparator)
 
     # ヘッダー部の取得
-    data.headers = data0[currentPos:nextSeparator]
-    debug.printData("ヘッダー", data.headers)
+    myDataClass.headers = data0[currentPos:nextSeparator]
+    debug.printData("ヘッダー", myDataClass.headers)
 
     # ヘッダー以降の各ブロックの処理
     factory = myFactory()   # ここからファクトリ使う。簡易ファクトリパターン
@@ -242,22 +239,27 @@ def generateData(fileName):
         debug.printPositions(currentPos, nextSeparator)
 
         # ここで「[Manager]\n」みたいなオブジェクト判定用の文字列を与えている。
-        data.type = factory.type = data0[currentPos]
+        myDataClass.type = factory.type = data0[currentPos]
         currentPos = currentPos + 1  # ブロックがわかったので、次の実データ部から読むようにカーソル（概念）を一つ進める
 
-        data.setData(factory.create(data0[currentPos:nextSeparator]))
+        myDataClass.setData(factory.create(data0[currentPos:nextSeparator]))
 
-    return data
+    return myDataClass
 
 
-def diffLib(l1, l2):
-    matcher = difflib.SequenceMatcher(None, l1, l2)
+def diffLib(l0, l1):
+    matcher = difflib.SequenceMatcher(None, l0, l1)
 
     tempResults = []
 
-    for opcode in matcher.get_opcodes():
-        if opcode[0] in ('replace', 'insert', 'delete'):
-            tempResults.append(opcode)
+    # 比較しつつ、ついでにある程度データを読めるように。整形ってほどではない。
+    for tag, i0, i1, j0, j1 in matcher.get_opcodes():
+        if tag == 'replace':
+            tempResults.append([tag, l0[i0], l1[j0]])
+        elif tag == 'insert':
+            tempResults.append([tag, ' ', l1[j0]])
+        elif tag == 'delete':
+            tempResults.append([tag, l0[i0], ' '])
 
     return tempResults
 
@@ -360,19 +362,191 @@ def myDiff(d0, d1):
     return results
 
 
+def generateMarkdown(files, diffData, startDateTime):
+
+    outputFileName = 'myDiff_' + startDateTime.strftime("%Y%m%d%H%M%S") + '.md'
+
+    # ファイルサマリを生成する。
+    md = ['# diff : ' + files[0] + ' - ' + files[1] + ' : ' + startDateTime.strftime("%Y/%m/%d %H:%M:%S")]
+    md.append('\n')
+    md.append('- ファイルその1 : ' + files[0])
+    md.append('- ファイルその2 : ' + files[1])
+    md.append('- 比較日時 : ' + startDateTime.strftime("%Y/%m/%d %H:%M:%S"))
+    md.append('- Markdownファイル名 : ' + outputFileName)
+    md.append('\n')
+
+    # header 情報を生成する
+    md.append('## ヘッダー部')
+    md.append('\n')
+    genMd(md, diffData['header'])
+
+    # Manager1を生成する
+    md.append('## Manager1 : Base')
+    md.append('\n')
+    genMd(md, diffData['ManagerBase'])
+
+    # Manager2を生成する
+    md.append('## Manager2 : PageInfo')
+    md.append('\n')
+    genMd(md, diffData['ManagerPageInfo'])
+
+    # Entity1を生成する
+    md.append('## Entity1 : Keys')
+    md.append('\n')
+    genMd(md, diffData['EntityKeys'])
+
+    # Entity2を生成する
+    md.append('## Entity2 : Entities')
+    md.append('\n')
+    for e in diffData['Entities']:
+        md.append('### Entity : ' + e)
+        md.append('\n')
+
+        # EntityBase
+        md.append('#### EntityBase')
+        md.append('\n')
+        genMd(md, diffData['Entities'][e]['EntityBase'])
+
+        # EntityFields
+        md.append('#### Fields')
+        md.append('\n')
+        genMd(md, diffData['Entities'][e]['Fields'])
+
+        # EntityFields
+        md.append('#### Index')
+        md.append('\n')
+        genMd(md, diffData['Entities'][e]['Index'])
+
+    # Relation1を生成する
+    md.append('## Relation1 : Keys')
+    md.append('\n')
+    genMd(md, diffData['RelationKeys'])
+
+    # Relation2を生成する
+    md.append('## Relation2 : Relations')
+    md.append('\n')
+    for e in diffData['Relations']:
+        md.append('### Relation : ' + e)
+        md.append('\n')
+
+        # Data
+        md.append('#### Data')
+        md.append('\n')
+        genMd(md, diffData['Relations'][e]['Data'])
+
+    # Comment1を生成する
+    md.append('## Comment1 : Keys')
+    md.append('\n')
+    genMd(md, diffData['CommentKeys'])
+
+    # Comment2を生成する
+    md.append('## Comment2 : Comments')
+    md.append('\n')
+    for e in diffData['Comments']:
+        md.append('### Comment : ' + e)
+        md.append('\n')
+
+        # Data
+        md.append('#### Data')
+        md.append('\n')
+        genMd(md, diffData['Comments'][e]['Data'])
+
+    # Shape1を生成する
+    md.append('## Shape1 : Keys')
+    md.append('\n')
+    genMd(md, diffData['ShapeKeys'])
+
+    # Shape2を生成する
+    md.append('## Shape2 : Shapes')
+    md.append('\n')
+    for e in diffData['Shapes']:
+        md.append('### Shapes : ' + e)
+        md.append('\n')
+
+        # Data
+        md.append('#### Data')
+        md.append('\n')
+        genMd(md, diffData['Comments'][e]['Data'])
+
+    # Line1を生成する
+    md.append('## Line1 : Keys')
+    md.append('\n')
+    genMd(md, diffData['LineKeys'])
+
+    # Lines2を生成する
+    md.append('## Line2 : Lines')
+    md.append('\n')
+    for e in diffData['Lines']:
+        md.append('### Lines : ' + e)
+        md.append('\n')
+
+        # Data
+        md.append('#### Data')
+        md.append('\n')
+        genMd(md, diffData['Lines'][e]['Data'])
+
+    # Other1を生成する
+    md.append('## Other1 : Keys')
+    md.append('\n')
+    genMd(md, diffData['OtherKeys'])
+
+    # Other2を生成する
+    md.append('## Other2 : Others')
+    md.append('\n')
+    for e in diffData['Others']:
+        md.append('### Others : ' + e)
+        md.append('\n')
+
+        # Data
+        md.append('#### Data')
+        md.append('\n')
+        genMd(md, diffData['Others'][e]['Data'])
+
+    return md
+
+
+def genMd(md, data):
+
+    if len(data) > 0:
+
+        md.append('- 相違件数 : ' + str(len(data)) + ' 件')
+        md.append('\n')
+        md.append('| No. | 区分 | 比較 A | 比較 B |')
+        md.append('|:--:|:--|:--|:--|')
+
+        for i, d in enumerate(data):
+            if d[0] in ['replace', 'insert', 'delete']:
+                md.append('|' + str(i) + '|' + '|'.join(d).replace('\n', '<BR>') + '|')
+
+    else:
+        md.append('- 差異なし')
+
+    md.append('\n')
+
+
+def outputFile(outputAddr, md):
+
+    with open(outputAddr, mode='w', encoding='utf-8_sig') as f:
+        for s in md:
+            f.write(s + '\n')
+
+
 def main(files):
-    print(files)
+    startDateTime = datetime.datetime.today()
     d0 = generateData(files[0])
     d1 = generateData(files[1])
     diffSummary = myDiff(d0, d1)
-    print(diffSummary)
+    md = generateMarkdown(files, diffSummary, startDateTime)
+    outputFileAddr = 'F:\\work\\simple_PG\\python2021\\myDiff_' + startDateTime.strftime("%Y%m%d%H%M%S") + '.md'
+    outputFile(outputFileAddr, md)
+
     print('main - end')
 
 
 if __name__ == '__main__':
 
     # files = ["IYNS新お届け_ER図.a5er", "IYNS_ER図_2.a5er"]
-    files = ["F:\\work\\simple_PG\\python2021\\00.a5er",
-             "F:\\work\\simple_PG\\python2021\\01.a5er"]
+    files = ['F:\\work\\simple_PG\\python2021\\00.a5er',
+             'F:\\work\\simple_PG\\python2021\\01.a5er']
 
     main(files)

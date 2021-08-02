@@ -255,9 +255,8 @@ def diffLib(l0, l1):
     # 比較しつつ、ついでにある程度データを読めるように。整形ってほどではない。
     for tag, i0, i1, j0, j1 in matcher.get_opcodes():
         if tag == 'replace':
-            for x, i in enumerate(range(i0, i1)):
-                # もしかしたらj側がズレるかもだけど仕方ない。
-                tempResults.append([tag, l0[i], l1[j0 + x]])
+            # replaceは件数が1対1じゃないからこうなるしかない。
+            tempResults.append([tag, ''.join(l0[i0:i1]), ''.join(l1[j0:j1])])
         elif tag == 'insert':
             for j in range(j0, j1):
                 tempResults.append([tag, ' ', l1[j]])
@@ -542,7 +541,8 @@ def main(files):
     d1 = generateData(files[1])
     diffSummary = myDiff(d0, d1)
     md = generateMarkdown(files, diffSummary, startDateTime)
-    outputFileAddr = 'F:\\work\\simple_PG\\python2021\\_' + startDateTime.strftime("%Y%m%d%H%M%S") + '.md'
+    outputFileAddr = 'F:\\work\\simple_PG\\python2021\\' + files[0][files[0].rfind('\\')+1:files[0].rfind(
+        '.')] + '-' + files[1][files[1].rfind('\\')+1:files[1].rfind('.')] + '_' + startDateTime.strftime("%Y%m%d%H%M%S") + '.md'
     outputFile(outputFileAddr, md)
 
     print('main - end')
@@ -551,7 +551,7 @@ def main(files):
 if __name__ == '__main__':
 
     # files = ["IYNS新お届け_ER図.a5er", "IYNS_ER図_2.a5er"]
-    files = ['F:\\work\\simple_PG\\python2021\\03.a5er',
-             'F:\\work\\simple_PG\\python2021\\04.a5er']
+    files = ['F:\\work\\simple_PG\\python2021\\00.a5er',
+             'F:\\work\\simple_PG\\python2021\\27.a5er']
 
     main(files)

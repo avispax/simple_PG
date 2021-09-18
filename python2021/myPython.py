@@ -372,139 +372,131 @@ def generateMarkdown(files, diffData, startDateTime):
     # ファイルサマリを生成する。
     md = ['# diff : ' + files[0][files[0].rfind('\\')+1:] + ' - ' + files[1][files[1].rfind('\\')+1:] +
           ' : ' + startDateTime.strftime("%Y/%m/%d %H:%M:%S")]
-    md.append('\n')
+    md.append('')
     md.append('- ファイルその1 : ' + files[0])
     md.append('- ファイルその2 : ' + files[1])
     md.append('- 比較日時 : ' + startDateTime.strftime("%Y/%m/%d %H:%M:%S"))
     md.append('- Markdownファイル名 : ' + outputFileName)
-    md.append('\n')
+    md.append('')
 
     # header 情報を生成する
-    md.append('## ヘッダー部')
-    md.append('\n')
+    md.append('## ヘッダー部\n')
     genMd(md, diffData['header'])
 
     # Manager1を生成する
-    md.append('## Manager1 : Base')
-    md.append('\n')
+    md.append('## Manager1 : Base\n')
     genMd(md, diffData['ManagerBase'])
 
     # Manager2を生成する
-    md.append('## Manager2 : PageInfo')
-    md.append('\n')
+    md.append('## Manager2 : PageInfo\n')
     genMd(md, diffData['ManagerPageInfo'])
 
     # Entity1を生成する
-    md.append('## Entity1 : Keys')
-    md.append('\n')
+    md.append('## Entity1 : Keys\n')
     genMd(md, diffData['EntityKeys'])
 
     # Entity2を生成する
-    md.append('## Entity2 : Entities')
-    md.append('\n')
-    for e in diffData['Entities']:
-        md.append('### Entity : ' + e)
-        md.append('\n')
+    md.append('## Entity2 : Entities\n')
 
-        # EntityBase
-        md.append('#### EntityBase')
-        md.append('\n')
-        genMd(md, diffData['Entities'][e]['EntityBase'])
+    if len(diffData['Entities']) > 0:
 
-        # EntityFields
-        md.append('#### Fields')
-        md.append('\n')
-        genMd(md, diffData['Entities'][e]['Fields'])
+        for e in diffData['Entities']:
+            md.append('### Entity : ' + e)
 
-        # EntityFields
-        md.append('#### Index')
-        md.append('\n')
-        genMd(md, diffData['Entities'][e]['Index'])
+            # EntityBase
+            md.append('#### EntityBase\n')
+            genMd(md, diffData['Entities'][e]['EntityBase'])
+
+            # EntityFields
+            md.append('#### Fields\n')
+            genMd(md, diffData['Entities'][e]['Fields'])
+
+            # EntityFields
+            md.append('#### Index\n')
+            genMd(md, diffData['Entities'][e]['Index'])
+
+    else:
+        md.append('- 差異なし\n')
 
     # Relation1を生成する
-    md.append('## Relation1 : Keys')
-    md.append('\n')
+    md.append('## Relation1 : Keys\n')
     genMd(md, diffData['RelationKeys'])
 
     # Relation2を生成する
-    md.append('## Relation2 : Relations')
-    md.append('\n')
-    for e in diffData['Relations']:
-        md.append('### Relation : ' + e.replace('\n', '-'))
-        md.append('\n')
+    md.append('## Relation2 : Relations\n')
+    if len(diffData['Relations']) > 0:
+        for e in diffData['Relations']:
+            md.append('### Relation : ' + e.replace('\n', '-') + '\n')
 
-        # Data
-        md.append('#### Data')
-        md.append('\n')
-        genMd(md, diffData['Relations'][e]['Data'])
+            # Data
+            md.append('#### Data\n')
+            genMd(md, diffData['Relations'][e]['Data'])
+    else:
+        md.append('- 差異なし\n')
 
     # Comment1を生成する
-    md.append('## Comment1 : Keys')
-    md.append('\n')
+    md.append('## Comment1 : Keys\n')
     genMd(md, diffData['CommentKeys'])
 
     # Comment2を生成する
-    md.append('## Comment2 : Comments')
-    md.append('\n')
-    for e in diffData['Comments']:
-        md.append('### Comment : ' + e)
-        md.append('\n')
+    md.append('## Comment2 : Comments\n')
+    if len(diffData['Comments']) > 0:
+        for e in diffData['Comments']:
+            md.append('### Comment : ' + e + '\n')
 
-        # Data
-        md.append('#### Data')
-        md.append('\n')
-        genMd(md, diffData['Comments'][e]['Data'])
+            # Data
+            md.append('#### Data\n')
+            genMd(md, diffData['Comments'][e]['Data'])
+    else:
+        md.append('- 差異なし\n')
 
     # Shape1を生成する
-    md.append('## Shape1 : Keys')
-    md.append('\n')
+    md.append('## Shape1 : Keys\n')
     genMd(md, diffData['ShapeKeys'])
 
     # Shape2を生成する
-    md.append('## Shape2 : Shapes')
-    md.append('\n')
-    for e in diffData['Shapes']:
-        md.append('### Shapes : ' + e)
-        md.append('\n')
+    md.append('## Shape2 : Shapes\n')
+    if len(diffData['Shapes']) > 0:
+        for e in diffData['Shapes']:
+            md.append('### Shapes : ' + e + '\n')
 
-        # Data
-        md.append('#### Data')
-        md.append('\n')
-        genMd(md, diffData['Comments'][e]['Data'])
+            # Data
+            md.append('#### Data\n')
+            genMd(md, diffData['Comments'][e]['Data'])
+    else:
+        md.append('- 差異なし\n')
 
     # Line1を生成する
-    md.append('## Line1 : Keys')
-    md.append('\n')
+    md.append('## Line1 : Keys\n')
     genMd(md, diffData['LineKeys'])
 
     # Lines2を生成する
-    md.append('## Line2 : Lines')
-    md.append('\n')
-    for e in diffData['Lines']:
-        md.append('### Lines : ' + e)
-        md.append('\n')
+    md.append('## Line2 : Lines\n')
+    if len(diffData['Lines']) > 0:
+        for e in diffData['Lines']:
+            md.append('### Lines : ' + e + '\n')
 
-        # Data
-        md.append('#### Data')
-        md.append('\n')
-        genMd(md, diffData['Lines'][e]['Data'])
+            # Data
+            md.append('#### Data\n')
+            genMd(md, diffData['Lines'][e]['Data'])
+    else:
+        md.append('- 差異なし\n')
 
     # Other1を生成する
-    md.append('## Other1 : Keys')
-    md.append('\n')
+    md.append('## Other1 : Keys\n')
     genMd(md, diffData['OtherKeys'])
 
     # Other2を生成する
-    md.append('## Other2 : Others')
-    md.append('\n')
-    for e in diffData['Others']:
-        md.append('### Others : ' + e)
-        md.append('\n')
+    md.append('## Other2 : Others\n')
+    if len(diffData['Others']) > 0:
+        for e in diffData['Others']:
+            md.append('### Others : ' + e + '\n')
 
-        # Data
-        md.append('#### Data')
-        md.append('\n')
-        genMd(md, diffData['Others'][e]['Data'])
+            # Data
+            md.append('#### Data\n')
+            genMd(md, diffData['Others'][e]['Data'])
+    else:
+        md.append('- 差異なし\n')
 
     return md
 
@@ -513,19 +505,17 @@ def genMd(md, data):
 
     if len(data) > 0:
 
-        md.append('- 相違件数 : ' + str(len(data)) + ' 件')
-        md.append('\n')
+        md.append('- 相違件数 : ' + str(len(data)) + ' 件\n')
         md.append('| No. | 区分 | 比較 A | 比較 B |')
         md.append('|:--:|:--|:--|:--|')
 
         for i, d in enumerate(data):
             if d[0] in ['replace', 'insert', 'delete']:
                 md.append('|' + str(i) + '|' + '|'.join(d).replace('\n', '<BR>') + '|')
+        md.append('')
 
     else:
-        md.append('- 差異なし')
-
-    md.append('\n')
+        md.append('- 差異なし\n')
 
 
 def outputFile(outputAddr, md):
@@ -551,7 +541,11 @@ def main(files):
 if __name__ == '__main__':
 
     # files = ["IYNS新お届け_ER図.a5er", "IYNS_ER図_2.a5er"]
-    files = ['F:\\work\\simple_PG\\python2021\\00.a5er',
-             'F:\\work\\simple_PG\\python2021\\27.a5er']
+    files = ['F:\\work\\simple_PG\\python2021\\data\\00.a5er',
+             'F:\\work\\simple_PG\\python2021\\data\\16.a5er']
 
     main(files)
+
+# 以下自分用のメモ帳
+
+# 006BA135 緑色の色コード

@@ -477,3 +477,10 @@ ASALocalRun/
 
 # Local History for Visual Studio
 .localhistory/
+
+
+# excel
+*.xlsx
+
+# db
+*.a5er

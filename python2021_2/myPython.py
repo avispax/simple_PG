@@ -5,8 +5,8 @@ import glob  # エクセル一覧の取得で使用
 
 import openpyxl  # エクセル操作。要「pip install openpyxl」。ちなみに端末内にエクセルがインストールされていなくても動く。
 
-srcDir = ""  # インプットディレクトリ。元ネタ。最初の1回だけ参照する。
-workDir = "work"  # 作業用ディレクトリ。bakとか削除するから。
+srcDir = ""  # インプットディレクトリ。元ネタ。作業用ディレクトリ作成時に、最初の1回だけ参照する。
+workDir = "work"  # 作業用ディレクトリ。bakや作成中のディレクトリを削除。ここのエクセルを読み込んで、markdownを生成する。
 dstDir = ""  # アウトプットディレクトリ。ここにmdを生成する。
 
 
@@ -25,7 +25,7 @@ class designData:   # 画面設計書クラス
         # Markdown定型文
         self.templateStr = ('# イトーヨーカドーネットスーパー<br><br>@specTitle 画面設計書\n'
                             '\n'
-                            '@specVersion\n'
+                            'ver.@specVersion\n'
                             '\n'
                             '株式会社ビッグツリーテクノロジー＆コンサルティング\n'
                             '\n'
@@ -33,20 +33,21 @@ class designData:   # 画面設計書クラス
                             '\n'
                             '## 改訂履歴\n'
                             '\n'
-                            '@specHistory\n'
+                            '@specHistory'
                             '\n'
                             '------------------------------------------------------------------------------------------\n'
                             '\n'
                             '## 概要\n'
-                            '```gaiyou'
-                            '@specGaiyou'
-                            '```'
+                            '\n'
+                            '```Overview\n'
+                            '@specOverview\n'
+                            '```\n'
                             '\n'
                             '------------------------------------------------------------------------------------------\n'
                             '\n'
                             '## レイアウト\n'
                             '\n'
-                            '  - 画面タイトル1\n'
+                            '  - 画面タイトル1  \n'
                             '    ![画面1](img/1.jpg)\n'
                             '\n'
                             '------------------------------------------------------------------------------------------\n'
@@ -65,7 +66,7 @@ class designData:   # 画面設計書クラス
                             '\n'
                             '## 入力チェック\n'
                             '\n'
-                            '- バリデーションチェック\n'
+                            '- 入力チェック\n'
                             '\n'
                             '@specInputCheck'
                             '\n'
@@ -80,15 +81,49 @@ class designData:   # 画面設計書クラス
         # バージョン情報を履歴情報から取得。一番最後の配列の2番目の要素を固定で取得。
         version = self.history[len(self.history)-1][1]
 
-        # 履歴をMarkdownに整形
-
+        # マークダウン用の文字列を生成
         outputStr = (self.templateStr
                      .replace('@specTitle', self.title)
-                     .replace('@specVersion', 'ver.' + str('{:.2f}'.format(round(version, 2))))  # バージョンは「##.##」の形式になるように四捨五入とフォーマットをカマす。
+                     .replace('@specVersion', str('{:.2f}'.format(round(version, 2))))  # バージョンは「##.##」の形式になるように四捨五入とフォーマットをカマす。
+                     .replace('@specHistory', arrayToMarkdownTable(self.history, True))
+                     .replace('@specOverview', self.layout['Overview'])
+                     .replace('@specLayoutItems', arrayToMarkdownTable(self.layoutItems, True))
+                     .replace('@specEvents', arrayToMarkdownTable(self.events, True))
+                     .replace('@specInputCheck', arrayToMarkdownTable(self.inputCheck, True))
+                     .replace('@specBusinessCheck', arrayToMarkdownTable(self.businessCheck, True))
                      )
 
-        print(outputStr)
+        # print(outputStr)
         return outputStr
+
+
+def arrayToMarkdownTable(array, isHistory=False):
+    s = ''
+
+    s = '|' + '|'.join(array[0]).replace('\n', '<br>') + '|\n'    # 1配列目は項目行。これはかならず存在する。|項番|aaa|bbb|ccc|ddd|とかの。
+    s = s + '|:--' * len(array[0]) + '|\n'    # 間に表のあれ（アライメント？）を入れる。|:--|:--|:--|
+
+    for arr in array[1:]:   # ここからデータ部整形
+
+        # 結合に向けての準備
+        for col in range(len(arr)):
+            if isinstance(arr[col], str):
+                arr[col] = arr[col].replace('\n', '<br>')  # str 型なら 改行コード（\n）の存在に気をつけて、基本はそのまま採用。
+            elif arr[col] is None:
+                arr[col] = ' '    # None（値が入っていなかったセル）は「 」（半角スペース）を設定.
+
+            elif isHistory and col == 1:  # シート「改訂履歴」専用処理。
+                # なお、まれに各セルが 数値や日付 + フォーマット ではなく文字列としてそのまま書かれている状況もある。それはもうわざとやっているとみなし、先頭の分岐でそのまま採用している。
+                arr[1] = str('{:.2f}'.format(round(arr[1], 2)))  # シート「改訂履歴」の2列目はフォーマット指定の版数。値と実態が異なるので変換する。
+            elif isHistory and col == 2:
+                arr[2] = f'{arr[2]:%Y/%m/%d}'   # 日付型をフォーマットする。「2021/01/01形式」
+
+            else:
+                arr[col] = str(arr[col]).replace('\n', '<br>')  # なんかわからないものはすべてstr型に変更する。改行コード（\n）の存在に気をつけて、基本はそのまま採用。
+
+        s = s + '|' + '|'.join(arr) + '|\n'
+
+    return s
 
 
 def init():
@@ -123,7 +158,7 @@ def init():
         except FileNotFoundError:
             continue
 
-    # アウトプットディレクトリを設定
+    # アウトプットディレクトリのパスを生成
     global dstDir
     dstDir = srcDir + '_Markdown_' + datetime.datetime.today().strftime("%Y%m%d%H%M%S")
 
@@ -230,10 +265,6 @@ def exec():
             # for s in md:
             f.write(d.generateMarkdown() + '\n')
 
-    # 次の設計書へ
-
-    print('aaa')
-
     # 帳票設計書
 
     # メール設計書
@@ -252,7 +283,7 @@ if __name__ == '__main__':
 
     print('★Start - PG')
 
-    # カレントディレクトリをこのファイルのところに
+    # カレントディレクトリをこのファイルが存在するところに
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
     print('- カレントディレクトリ : ' + os.getcwd())
 

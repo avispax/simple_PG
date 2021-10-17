@@ -5,6 +5,8 @@ import glob  # エクセル一覧の取得で使用
 
 import openpyxl  # エクセル操作。要「pip install openpyxl」。ちなみに端末内にエクセルがインストールされていなくても動く。
 
+from concurrent.futures import ThreadPoolExecutor
+
 srcDir = ""  # インプットディレクトリ。元ネタ。作業用ディレクトリ作成時に、最初の1回だけ参照する。
 workDir = "work"  # 作業用ディレクトリ。bakや作成中のディレクトリを削除。ここのエクセルを読み込んで、markdownを生成する。
 dstDir = ""  # アウトプットディレクトリ。ここにmdを生成する。
@@ -196,7 +198,7 @@ def arrayToMarkdownTable(array, sheetTitle):
 
 def init():
 
-    print('★★ 初期化処理')
+    print('\n★★ 初期化処理 - start')
 
     # もし「work」があるなら削除
     # shutil.rmtree('work')
@@ -231,6 +233,8 @@ def init():
     dstDir = srcDir + '_Markdown_' + datetime.datetime.today().strftime("%Y%m%d%H%M%S")
 
     # 「.xlsx」をzipにして別名保存 : これやるかどうか微妙
+
+    print('\n★★ 初期化処理 - end')
 
 
 def readSheet(ws, array):
@@ -270,7 +274,7 @@ def readSheet(ws, array):
         # r = r + 1
 
 
-def readBaseExcelData(wb, d):
+def readBaseSheets(wb, d):
 
     # 改訂履歴とレイアウトのシートを読み込む。レイアウトは概要欄だけをいったん。
 
@@ -295,7 +299,7 @@ def readExcelSheetsForScreenDesignSpec(title, wb):
 
     d.title = title  # タイトル設定
 
-    d = readBaseExcelData(wb, d)    # 改訂履歴とレイアウトは今回の3ブックには必ず存在するので、関数化して省エネ。製造的に。
+    d = readBaseSheets(wb, d)    # 改訂履歴とレイアウトは今回の3ブックには必ず存在するので、関数化して省エネ。製造的に。
 
     readSheet(wb['画面項目'], d.layoutItems)    # 画面項目読み込み
 
@@ -315,7 +319,7 @@ def readExcelSheetsForReportSpec(title, wb):
 
     d.title = title  # タイトル設定
 
-    d = readBaseExcelData(wb, d)    # 改訂履歴とレイアウトは今回の3ブックには必ず存在するので、関数化して省エネ。製造的に。
+    d = readBaseSheets(wb, d)    # 改訂履歴とレイアウトは今回の3ブックには必ず存在するので、関数化して省エネ。製造的に。
 
     readSheet(wb['帳票項目'], d.reportItems)    # 帳票項目読み込み
 
@@ -324,53 +328,61 @@ def readExcelSheetsForReportSpec(title, wb):
     return d
 
 
-def doConvert(ls, func):
+def convertThread(l):
 
     # エクセルブックを開いて、シートをクラスに読み込んで、配置用ディレクトリを作って、mdを生成する。
     # 読み込み関数は関数オブジェクトとして渡してもらう
 
-    for l in ls:
-        print(l)
-        wb = openpyxl.load_workbook(l, data_only=True)  # ファイル読み込み
+    print(l)
+    wb = openpyxl.load_workbook(l, data_only=True)  # ファイル読み込み
 
-        try:
-            d = func(l[l.rfind('_')+1: l.rfind('.')], wb)  # エクセルの各シート読み込み
-        except:
-            print('■ error')
-            continue
+    # 各設計書用の読み込み関数を関数オブジェクトとして利用する。
+    func = None
+    if '06.画面設計書' in l:
+        func = readExcelSheetsForScreenDesignSpec
+    elif '15.帳票設計書' in l:
+        func = readExcelSheetsForReportSpec
+    else:
+        print('■ error - noFunc : ' + l)
 
-        # アウトプット準備 : ディレクトリ作成
-        dirPath = l.replace(workDir, dstDir)    # work のままなのでアウトプットディレクトリにリネーム。
-        fileName = os.path.splitext(os.path.basename(l))[0].strip()  # ファイル名（拡張子なし）
-        dirPath = os.path.dirname(dirPath) + os.sep + fileName  # ↑のファイル名を付与したディレクトリにする。階層深くなるけどそういうもの。
-        os.makedirs(dirPath + os.sep + 'img', exist_ok=True)    # img の階層まで一気にディレクトリ作成
+    try:
+        d = func(l[l.rfind('_')+1: l.rfind('.')], wb)  # エクセルの各シート読み込み
+    except:
+        print('■ error : ' + l)
 
-        # md生成
-        outputFileName = dirPath + os.sep + fileName + '.md'
-        with open(outputFileName, mode='w', encoding='utf-8_sig') as f:
-            # for s in md:
-            f.write(d.generateMarkdown() + '\n')
+    # アウトプット準備 : ディレクトリ作成
+    dirPath = l.replace(workDir, dstDir)    # work のままなのでアウトプットディレクトリにリネーム。
+    fileName = os.path.splitext(os.path.basename(l))[0].strip()  # ファイル名（拡張子なし）
+    dirPath = os.path.dirname(dirPath) + os.sep + fileName  # ↑のファイル名を付与したディレクトリにする。階層深くなるけどそういうもの。
+    os.makedirs(dirPath + os.sep + 'img', exist_ok=True)    # img の階層まで一気にディレクトリ作成
+
+    # md生成
+    outputFileName = dirPath + os.sep + fileName + '.md'
+    with open(outputFileName, mode='w', encoding='utf-8_sig') as f:
+        # for s in md:
+        f.write(d.generateMarkdown() + '\n')
 
 
 def exec():
     print('\n★★ 本処理 - start')
 
-    # エクセルファイルの一覧を取得（or 指定）して順次読み込み
+    # エクセルファイルの一覧を取得（or 指定）して順次読み込み。なんにせよリスト型になってればOK
 
     # まずは画面設計書
     # ls = glob.glob(workDir + '\\*画面設計書\\**\\*.xlsx', recursive=True)
     ls = ['work\\06.画面設計書\\共通\\画面設計書_ログイン.xlsx',
           'work\\06.画面設計書\\共通パーツデザイン\\画面設計書_共通パーツデザイン（ページネーション）.xlsx',
           'work\\06.画面設計書\\共通パーツデザイン\\画面設計書_共通パーツデザイン（値引対象）.xlsx']
-    doConvert(ls, readExcelSheetsForScreenDesignSpec)
 
-    # 帳票設計書
-    ls = []
+    # 次に帳票設計書
     # ls = glob.glob(workDir + '\\*帳票設計書\\**\\*.xlsx', recursive=True)
-    ls = ['work\\15.帳票設計書\\店舗管理\\商品管理\\0019_【機密(Ａ)】【新お届け】帳票設計書_チラシ商品 Soldout表示リスト .xlsx',
-          'work\\15.帳票設計書\\店舗管理\\精算管理\\0001_【機密(Ａ)】【新お届け】帳票設計書_ネットスーパー売上集計表.xlsx',
-          'work\\15.帳票設計書\\店舗管理\\集荷管理\\0002_【機密(Ａ)】【新お届け】帳票設計書_お客様メモ.xlsx']
-    doConvert(ls, readExcelSheetsForReportSpec)
+    ls = ls + ['work\\15.帳票設計書\\店舗管理\\商品管理\\0019_【機密(Ａ)】【新お届け】帳票設計書_チラシ商品 Soldout表示リスト .xlsx',
+               'work\\15.帳票設計書\\店舗管理\\精算管理\\0001_【機密(Ａ)】【新お届け】帳票設計書_ネットスーパー売上集計表.xlsx',
+               'work\\15.帳票設計書\\店舗管理\\集荷管理\\0002_【機密(Ａ)】【新お届け】帳票設計書_お客様メモ.xlsx']
+
+    # 作業開始
+    with ThreadPoolExecutor(max_workers=6, thread_name_prefix="thread") as pool:
+        pool.map(convertThread, ls)
 
     # メール設計書
 

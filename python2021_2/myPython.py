@@ -85,12 +85,12 @@ class screenDesignData:
         outputStr = (self.markdownTemplate
                      .replace('@specTitle', self.title)
                      .replace('@specVersion', str('{:.2f}'.format(round(version, 2))))  # バージョンは「##.##」の形式になるように四捨五入とフォーマットをカマす。
-                     .replace('@specHistory', arrayToMarkdownTable(self.history, True))
+                     .replace('@specHistory', arrayToMarkdownTable(self.history, '改訂履歴'))
                      .replace('@specOverview', self.layout['Overview'])
-                     .replace('@specLayoutItems', arrayToMarkdownTable(self.layoutItems, True))
-                     .replace('@specEvents', arrayToMarkdownTable(self.events, True))
-                     .replace('@specInputCheck', arrayToMarkdownTable(self.inputCheck, True))
-                     .replace('@specBusinessCheck', arrayToMarkdownTable(self.businessCheck, True))
+                     .replace('@specLayoutItems', arrayToMarkdownTable(self.layoutItems, '画面項目'))
+                     .replace('@specEvents', arrayToMarkdownTable(self.events, 'イベント一覧'))
+                     .replace('@specInputCheck', arrayToMarkdownTable(self.inputCheck, '入力チェック'))
+                     .replace('@specBusinessCheck', arrayToMarkdownTable(self.businessCheck, '業務チェック'))
                      )
 
         return outputStr
@@ -156,16 +156,16 @@ class reportData:   # 帳票設計書クラス
         outputStr = (self.markdownTemplate
                      .replace('@specTitle', self.title)
                      .replace('@specVersion', str('{:.2f}'.format(round(version, 2))))  # バージョンは「##.##」の形式になるように四捨五入とフォーマットをカマす。
-                     .replace('@specHistory', arrayToMarkdownTable(self.history, True))
+                     .replace('@specHistory', arrayToMarkdownTable(self.history, '改訂履歴'))
                      .replace('@specOverview', self.layout['Overview'])
-                     .replace('@specReportItems', arrayToMarkdownTable(self.reportItems, True))
-                     .replace('@specEvents', arrayToMarkdownTable(self.events, True))
+                     .replace('@specReportItems', arrayToMarkdownTable(self.reportItems, '帳票項目'))
+                     .replace('@specEvents', arrayToMarkdownTable(self.events, 'イベント一覧'))
                      )
 
         return outputStr
 
 
-def arrayToMarkdownTable(array, isHistory=False):
+def arrayToMarkdownTable(array, sheetTitle):
     s = ''
 
     s = '| ' + ' | '.join(array[0]).replace('\n', '<br>') + ' |\n'    # 1配列目は項目行。これはかならず存在する。|項番|aaa|bbb|ccc|ddd|とかの。
@@ -180,11 +180,11 @@ def arrayToMarkdownTable(array, isHistory=False):
             elif arr[col] is None:
                 arr[col] = ' '    # None（値が入っていなかったセル）は「 」（半角スペース）を設定.
 
-            elif isHistory and col == 1:  # シート「改訂履歴」専用処理。
+            elif sheetTitle == '改訂履歴' and col == 1:  # シート「改訂履歴」専用処理。
                 # なお、まれに各セルが 数値や日付 + フォーマット ではなく文字列としてそのまま書かれている状況もある。それはもうわざとやっているとみなし、先頭の分岐でそのまま採用している。
                 arr[1] = str('{:.2f}'.format(round(arr[1], 2)))  # シート「改訂履歴」の2列目はフォーマット指定の版数。値と実態が異なるので変換する。
-            elif isHistory and col == 2:
-                arr[2] = f'{arr[2]:%Y/%m/%d}'   # 日付型をフォーマットする。「2021/01/01形式」
+            elif sheetTitle == '改訂履歴' and col == 2:
+                arr[2] = f'{arr[2]:%Y/%m/%d}'   # 日付型をフォーマットする。「2021/01/01」形式
 
             else:
                 arr[col] = str(arr[col]).replace('\n', '<br>')  # なんかわからないものはすべてstr型に変更する。改行コード（\n）の存在に気をつけて、基本はそのまま採用。
@@ -270,11 +270,9 @@ def readSheet(ws, array):
         # r = r + 1
 
 
-def readExcelSheetsForScreenDesignSpec(title, wb):
+def readBaseExcelData(wb, d):
 
-    d = screenDesignData()  # インスタンス化
-
-    d.title = title  # タイトル設定
+    # 改訂履歴とレイアウトのシートを読み込む。レイアウトは概要欄だけをいったん。
 
     readSheet(wb['改訂履歴'], d.history)    # 改訂履歴読み込み
 
@@ -287,6 +285,17 @@ def readExcelSheetsForScreenDesignSpec(title, wb):
         row = row + 1
     d.layout = {'Overview': ws.cell(row + 1, col).value}    # 概要欄ゲット
     # レイアウト読み込み - ここまで
+
+    return d
+
+
+def readExcelSheetsForScreenDesignSpec(title, wb):
+
+    d = screenDesignData()  # インスタンス化
+
+    d.title = title  # タイトル設定
+
+    d = readBaseExcelData(wb, d)    # 改訂履歴とレイアウトは今回の3ブックには必ず存在するので、関数化して省エネ。製造的に。
 
     readSheet(wb['画面項目'], d.layoutItems)    # 画面項目読み込み
 
@@ -306,17 +315,7 @@ def readExcelSheetsForReportSpec(title, wb):
 
     d.title = title  # タイトル設定
 
-    readSheet(wb['改訂履歴'], d.history)    # 改訂履歴読み込み
-
-    # レイアウト読み込み - ここから
-    ws = wb['レイアウト']
-    row = col = 1   # 行カーソルと列カーソルをセルの「A1」で初期化。ここから下に探索する。
-
-    # 概要欄探索
-    while ws.cell(row, col).value != '概要':
-        row = row + 1
-    d.layout = {'Overview': ws.cell(row + 1, col).value}    # 概要欄ゲット
-    # レイアウト読み込み - ここまで
+    d = readBaseExcelData(wb, d)    # 改訂履歴とレイアウトは今回の3ブックには必ず存在するので、関数化して省エネ。製造的に。
 
     readSheet(wb['帳票項目'], d.reportItems)    # 帳票項目読み込み
 
@@ -325,29 +324,24 @@ def readExcelSheetsForReportSpec(title, wb):
     return d
 
 
-def exec():
-    print('\n★★ 本処理 - start')
+def doConvert(ls, func):
 
-    # エクセルファイルの一覧を取得して順次読み込み
+    # エクセルブックを開いて、シートをクラスに読み込んで、配置用ディレクトリを作って、mdを生成する。
+    # 読み込み関数は関数オブジェクトとして渡してもらう
 
-    # まずは画面設計書
-    # ls = glob.glob(workDir + '\\*画面設計書\\**\\*.xlsx', recursive=True)
-    ls = ['work\\06.画面設計書\\共通\\画面設計書_ログイン.xlsx',
-          'work\\06.画面設計書\\共通パーツデザイン\\画面設計書_共通パーツデザイン（ページネーション）.xlsx',
-          'work\\06.画面設計書\\共通パーツデザイン\\画面設計書_共通パーツデザイン（値引対象）.xlsx']
     for l in ls:
         print(l)
         wb = openpyxl.load_workbook(l, data_only=True)  # ファイル読み込み
 
         try:
-            d = readExcelSheetsForScreenDesignSpec(l[l.rfind('_')+1: l.rfind('.')], wb)  # エクセルの各シート読み込み
+            d = func(l[l.rfind('_')+1: l.rfind('.')], wb)  # エクセルの各シート読み込み
         except:
             print('■ error')
             continue
 
         # アウトプット準備 : ディレクトリ作成
         dirPath = l.replace(workDir, dstDir)    # work のままなのでアウトプットディレクトリにリネーム。
-        fileName = os.path.splitext(os.path.basename(l))[0]  # ファイル名（拡張子なし）
+        fileName = os.path.splitext(os.path.basename(l))[0].strip()  # ファイル名（拡張子なし）
         dirPath = os.path.dirname(dirPath) + os.sep + fileName  # ↑のファイル名を付与したディレクトリにする。階層深くなるけどそういうもの。
         os.makedirs(dirPath + os.sep + 'img', exist_ok=True)    # img の階層まで一気にディレクトリ作成
 
@@ -357,33 +351,26 @@ def exec():
             # for s in md:
             f.write(d.generateMarkdown() + '\n')
 
+
+def exec():
+    print('\n★★ 本処理 - start')
+
+    # エクセルファイルの一覧を取得（or 指定）して順次読み込み
+
+    # まずは画面設計書
+    # ls = glob.glob(workDir + '\\*画面設計書\\**\\*.xlsx', recursive=True)
+    ls = ['work\\06.画面設計書\\共通\\画面設計書_ログイン.xlsx',
+          'work\\06.画面設計書\\共通パーツデザイン\\画面設計書_共通パーツデザイン（ページネーション）.xlsx',
+          'work\\06.画面設計書\\共通パーツデザイン\\画面設計書_共通パーツデザイン（値引対象）.xlsx']
+    doConvert(ls, readExcelSheetsForScreenDesignSpec)
+
     # 帳票設計書
     ls = []
     # ls = glob.glob(workDir + '\\*帳票設計書\\**\\*.xlsx', recursive=True)
     ls = ['work\\15.帳票設計書\\店舗管理\\商品管理\\0019_【機密(Ａ)】【新お届け】帳票設計書_チラシ商品 Soldout表示リスト .xlsx',
           'work\\15.帳票設計書\\店舗管理\\精算管理\\0001_【機密(Ａ)】【新お届け】帳票設計書_ネットスーパー売上集計表.xlsx',
           'work\\15.帳票設計書\\店舗管理\\集荷管理\\0002_【機密(Ａ)】【新お届け】帳票設計書_お客様メモ.xlsx']
-    for l in ls:
-        print(l)
-        wb = openpyxl.load_workbook(l, data_only=True)  # ファイル読み込み
-
-        try:
-            d = readExcelSheetsForReportSpec(l[l.rfind('_')+1: l.rfind('.')], wb)  # エクセルの各シート読み込み
-        except:
-            print('■ error')
-            continue
-
-        # アウトプット準備 : ディレクトリ作成
-        dirPath = l.replace(workDir, dstDir)    # work のままなのでアウトプットディレクトリにリネーム。
-        fileName = os.path.splitext(os.path.basename(l))[0]  # ファイル名（拡張子なし）
-        dirPath = (os.path.dirname(dirPath) + os.sep + fileName).rstrip()  # ↑のファイル名を付与したディレクトリにする。階層深くなるけどそういうもの。
-        os.makedirs(dirPath + os.sep + 'img', exist_ok=True)    # img の階層まで一気にディレクトリ作成
-
-        # md生成
-        outputFileName = dirPath + os.sep + fileName + '.md'
-        with open(outputFileName, mode='w', encoding='utf-8_sig') as f:
-            # for s in md:
-            f.write(d.generateMarkdown() + '\n')
+    doConvert(ls, readExcelSheetsForReportSpec)
 
     # メール設計書
 
@@ -408,7 +395,7 @@ if __name__ == '__main__':
     print('- カレントディレクトリ : ' + os.getcwd())
 
     # さぁがんばろ
-    srcDir = '20210930_エクセルをMDに'
+    srcDir = '20210930_エクセルをMDに'  # 元ネタが存在するディレクトリを指定。Dropbox上でもいいけど、容量節約で実態がないモードにしているとたぶん動かない。
     main()
 
     print('★End - PG')

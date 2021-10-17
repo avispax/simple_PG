@@ -180,17 +180,19 @@ def arrayToMarkdownTable(array, sheetTitle):
             if isinstance(arr[col], str):
                 arr[col] = arr[col].replace('\n', '<br>')  # str 型なら 改行コード（\n）の存在に気をつけて、基本はそのまま採用。
             elif arr[col] is None:
-                arr[col] = ' '    # None（値が入っていなかったセル）は「 」（半角スペース）を設定.
+                arr[col] = ' '    # None（値が入っていなかったセル）は「 」（半角スペース）を設定。マークダウンの表として「 」が必要なので。
 
             elif sheetTitle == '改訂履歴' and col == 1:  # シート「改訂履歴」専用処理。
                 # なお、まれに各セルが 数値や日付 + フォーマット ではなく文字列としてそのまま書かれている状況もある。それはもうわざとやっているとみなし、先頭の分岐でそのまま採用している。
-                arr[1] = str('{:.2f}'.format(round(arr[1], 2)))  # シート「改訂履歴」の2列目はフォーマット指定の版数。値と実態が異なるので変換する。
+                arr[col] = str('{:.2f}'.format(round(arr[col], 2)))  # シート「改訂履歴」の2列目はフォーマット指定の版数。値と実態が異なるので変換する。
+                # TODO 端数処理:切り捨て
             elif sheetTitle == '改訂履歴' and col == 2:
-                arr[2] = f'{arr[2]:%Y/%m/%d}'   # 日付型をフォーマットする。「2021/01/01」形式
+                arr[col] = f'{arr[col]:%Y/%m/%d}'   # 日付型をフォーマットする。「2021/01/01」形式
 
             else:
                 arr[col] = str(arr[col]).replace('\n', '<br>')  # なんかわからないものはすべてstr型に変更する。改行コード（\n）の存在に気をつけて、基本はそのまま採用。
 
+        # TODO : 入力チェック、業務チェックの場合はちょっと字下げをして、「- 入力チェック  」に従属するような表にする。Markdown的に。
         s = s + '| ' + ' | '.join(arr) + ' |\n'
 
     return s
@@ -381,7 +383,7 @@ def exec():
                'work\\15.帳票設計書\\店舗管理\\集荷管理\\0002_【機密(Ａ)】【新お届け】帳票設計書_お客様メモ.xlsx']
 
     # 作業開始
-    with ThreadPoolExecutor(max_workers=6, thread_name_prefix="thread") as pool:
+    with ThreadPoolExecutor(max_workers=6) as pool:
         pool.map(convertThread, ls)
 
     # メール設計書

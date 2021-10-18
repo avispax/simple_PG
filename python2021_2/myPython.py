@@ -10,6 +10,7 @@ from concurrent.futures import ThreadPoolExecutor
 srcDir = ""  # インプットディレクトリ。元ネタ。作業用ディレクトリ作成時に、最初の1回だけ参照する。
 workDir = "work"  # 作業用ディレクトリ。bakや作成中のディレクトリを削除。ここのエクセルを読み込んで、markdownを生成する。
 dstDir = ""  # アウトプットディレクトリ。ここにmdを生成する。
+isSkipInit = False    # 初期化処理（init()）を実行するかどうか。スキップする場合（True）、work ディレクトリ とかを毎回やらない。めんどくさい人用。
 
 
 class screenDesignData:
@@ -22,7 +23,7 @@ class screenDesignData:
         self.events = []    # イベント一覧
         self.inputCheck = []    # 入力チェック
         self.businessCheck = []  # 業務チェック
-        self.functions = []  # 機能設計群
+        self.functions = {}  # 機能設計群
 
         # Markdown定型文
         self.markdownTemplate = ('# イトーヨーカドーネットスーパー<br><br>@specTitle 画面設計書\n'
@@ -76,7 +77,32 @@ class screenDesignData:
                                  '\n'
                                  '@specBusinessCheck'
                                  '\n'
+                                 '------------------------------------------------------------------------------------------\n'
+                                 '\n'
+                                 '## 機能\n'
+                                 '\n'
+                                 '@functions'
                                  )
+
+        self.markdownTemplate_functions = ('### @name\n'
+                                           '\n'
+                                           '- id : @id\n'
+                                           '\n'
+                                           '#### 入力\n'
+                                           '\n'
+                                           '@input\n'
+                                           '\n'
+                                           '#### 出力\n'
+                                           '\n'
+                                           '@output\n'
+                                           '\n'
+                                           '#### 処理内容\n'
+                                           '\n'
+                                           '```\n'
+                                           '@processDetail'
+                                           '```\n'
+                                           '\n'
+                                           )
 
     def generateMarkdown(self):
 
@@ -93,9 +119,23 @@ class screenDesignData:
                      .replace('@specEvents', arrayToMarkdownTable(self.events, 'イベント一覧'))
                      .replace('@specInputCheck', arrayToMarkdownTable(self.inputCheck, '入力チェック'))
                      .replace('@specBusinessCheck', arrayToMarkdownTable(self.businessCheck, '業務チェック'))
+                     .replace('@functions', self.generateFunctions())
                      )
 
         return outputStr
+
+    def generateFunctions(self):
+        returnStr = ''
+        sorted_functions = sorted(self.functions.items(), key=lambda x: x[0])
+        for k, v in sorted_functions:    # キーでソートしながら中身を取り出す。sheetNamesはシートの並び順だが、dictの順序が保証されてるか怪しかったので。
+            returnStr = returnStr + (self.markdownTemplate_functions
+                                     .replace('@name', v['name'])
+                                     .replace('@id', str(v['id'] or ''))
+                                     .replace('@input', '- ' + v['input'].replace('\n', '\n- '))
+                                     .replace('@output', '- ' + v['output'].replace('\n', '\n- '))
+                                     .replace('@processDetail', v['processDetail'])
+                                     )
+        return returnStr
 
 
 class reportData:   # 帳票設計書クラス
@@ -203,10 +243,13 @@ def init():
     print('\n★★ 初期化処理 - start')
 
     # もし「work」があるなら削除
-    # shutil.rmtree('work')
+    try:
+        shutil.rmtree('work')
+    except:
+        pass
 
-    # ディレクトリをまるごと別ディレクトリとして同階層にコピー。
-    # shutil.copytree(srcDir, workDir)
+    # ディレクトリをまるごと別ディレクトリとして同階層にコピー。名前は workDir のとおり。
+    shutil.copytree(srcDir, workDir)
 
     # お掃除 : 「bak」ディレクトリは削除。
     ls = glob.glob(workDir + '\\**\\bak', recursive=True)
@@ -229,10 +272,6 @@ def init():
 
         except FileNotFoundError:
             continue
-
-    # アウトプットディレクトリのパスを生成
-    global dstDir
-    dstDir = srcDir + '_Markdown_' + datetime.datetime.today().strftime("%Y%m%d%H%M%S")
 
     # 「.xlsx」をzipにして別名保存 : これやるかどうか微妙
 
@@ -313,6 +352,71 @@ def readExcelSheetsForScreenDesignSpec(title, wb):
 
     readSheet(wb['業務チェック'], d.businessCheck)    # 業務チェック読み込み
 
+    # 【機能】xxx シート読み込み - ここから
+    for i, s in enumerate(wb.sheetnames):
+
+        # ガード節 : シート名に「【機能】」がなければスキップ
+        if '【機能】' not in s:
+            continue
+
+        # 読み込み開始
+        ws = wb[s]  # シートをちゃんと読み込み。
+
+        # 変数とか準備
+        row = col = maxrow = maxcol = 1
+        data = {}
+        while ws.cell(maxrow, 1).value != '★END':  # end位置（下端）を特定
+            maxrow = maxrow + 1
+            if maxrow > 500:   # これぐらい到達しなかったらもうそこまででいいよ
+                break
+
+        while ws.cell(1, maxcol).value != '★END':  # end位置（右端）を特定
+            maxcol = maxcol + 1
+            if maxcol > 100:    # これぐらい到達しなかったらもうそこまででいいよ
+                break
+
+        # 機能IDと機能名
+        while ws.cell(row, 1).value != '機能ID':    # 機能名と機能IDが存在する行まで行カーソルを移動
+            row = row + 1
+
+        data['id'] = ws.cell(row + 1, 1).value    # 機能IDを取得
+
+        while ws.cell(row, col).value != '機能名':  # 機能名が存在する列まで列カーソルを移動
+            col = col + 1
+
+        data['name'] = ws.cell(row + 1, col).value  # 機能名を取得
+
+        # 入力と出力
+        col = 1
+        while ws.cell(row, 1).value != '入力':    # 行カーソル移動
+            row = row + 1
+
+        data['input'] = ws.cell(row + 1, 1).value    # 入力の内容を取得
+
+        while ws.cell(row, col).value != '出力':  # 列カーソル移動
+            col = col + 1
+
+        data['output'] = ws.cell(row + 1, col).value  # 出力の内容を取得
+
+        # 処理内容
+        col = 1
+        while ws.cell(row, 1).value != '繰返':    # 行カーソル移動
+            row = row + 1
+
+        values = []
+        for rowdata in ws.iter_rows(min_row=row+1, max_row=maxrow, min_col=3, max_col=maxcol):  # 行の内容を指定の範囲で 1セルずつ取得。数値とかが入ってても困るので文字列にキャストする。
+            values.append([str(cell.value) if cell.value is not None else ' ' for cell in rowdata])
+
+        processDetail = ''
+        for v in values:
+            processDetail = processDetail + ''.join(v).rstrip() + '\n'  # 1行としておかしくない感じにトリムしたり改行コードであれしたりと、全体で1文になるように操作
+
+        data['processDetail'] = processDetail
+
+        d.functions[i] = data   # クラスに追加
+
+    # 【機能】xxx シート読み込み - ここまで
+
     return d
 
 
@@ -340,21 +444,24 @@ def convertThread(l):
 
     # 各設計書用の読み込み関数を関数オブジェクトとして利用する。
     func = None
-    if '06.画面設計書' in l:
+    fileName = os.path.basename(l)
+    if '画面設計書_' in l:
         func = readExcelSheetsForScreenDesignSpec
-    elif '15.帳票設計書' in l:
+    elif '帳票設計書_' in l:
         func = readExcelSheetsForReportSpec
     else:
         print('■ error - noFunc : ' + l)
 
+    d = None
     try:
         d = func(l[l.rfind('_')+1: l.rfind('.')], wb)  # エクセルの各シート読み込み
     except:
         print('■ error : ' + l)
+        return
 
     # アウトプット準備 : ディレクトリ作成
     dirPath = l.replace(workDir, dstDir)    # work のままなのでアウトプットディレクトリにリネーム。
-    fileName = os.path.splitext(os.path.basename(l))[0].strip()  # ファイル名（拡張子なし）
+    fileName = os.path.splitext(os.path.basename(l))[0].rstrip()  # ファイル名（拡張子なし）
     dirPath = os.path.dirname(dirPath) + os.sep + fileName  # ↑のファイル名を付与したディレクトリにする。階層深くなるけどそういうもの。
     os.makedirs(dirPath + os.sep + 'img', exist_ok=True)    # img の階層まで一気にディレクトリ作成
 
@@ -371,16 +478,17 @@ def exec():
     # エクセルファイルの一覧を取得（or 指定）して順次読み込み。なんにせよリスト型になってればOK
 
     # まずは画面設計書
-    # ls = glob.glob(workDir + '\\*画面設計書\\**\\*.xlsx', recursive=True)
-    ls = ['work\\06.画面設計書\\共通\\画面設計書_ログイン.xlsx',
-          'work\\06.画面設計書\\共通パーツデザイン\\画面設計書_共通パーツデザイン（ページネーション）.xlsx',
-          'work\\06.画面設計書\\共通パーツデザイン\\画面設計書_共通パーツデザイン（値引対象）.xlsx']
+    ls = glob.glob(workDir + '\\*画面設計書\\**\\*.xlsx', recursive=True)
+    # ls = [
+    #     'work\\06.画面設計書\\共通パーツデザイン\\画面設計書_SC02-03-01_共通パーツデザイン（値引対象）.xlsx'
+    # ]
+    # ls = ['work\\画面設計書_機能設計_サンプル.xlsx']
 
     # 次に帳票設計書
     # ls = glob.glob(workDir + '\\*帳票設計書\\**\\*.xlsx', recursive=True)
-    ls = ls + ['work\\15.帳票設計書\\店舗管理\\商品管理\\0019_【機密(Ａ)】【新お届け】帳票設計書_チラシ商品 Soldout表示リスト .xlsx',
-               'work\\15.帳票設計書\\店舗管理\\精算管理\\0001_【機密(Ａ)】【新お届け】帳票設計書_ネットスーパー売上集計表.xlsx',
-               'work\\15.帳票設計書\\店舗管理\\集荷管理\\0002_【機密(Ａ)】【新お届け】帳票設計書_お客様メモ.xlsx']
+    # ls = ls + ['work\\15.帳票設計書\\店舗管理\\商品管理\\0019_【機密(Ａ)】【新お届け】帳票設計書_チラシ商品 Soldout表示リスト .xlsx',
+    #            'work\\15.帳票設計書\\店舗管理\\精算管理\\0001_【機密(Ａ)】【新お届け】帳票設計書_ネットスーパー売上集計表.xlsx',
+    #            'work\\15.帳票設計書\\店舗管理\\集荷管理\\0002_【機密(Ａ)】【新お届け】帳票設計書_お客様メモ.xlsx']
 
     # 作業開始
     with ThreadPoolExecutor(max_workers=6) as pool:
@@ -394,7 +502,8 @@ def exec():
 def main():
 
     # 初期化 作業用ディレクトリにコピーしたり bakのお掃除とか
-    init()
+    if not isSkipInit:  # スキップしない場合は init() 実施。あまり負荷ではないが、ワークディレクトリの削除とコピーを行っているので、ソースディレクトリが変わってないならやんなくてよい。プログラムの初実行とソースの設計書が変わったらやってね。
+        init()
 
     # エクセル読み込む
     exec()
@@ -409,7 +518,12 @@ if __name__ == '__main__':
     print('- カレントディレクトリ : ' + os.getcwd())
 
     # さぁがんばろ
-    srcDir = '20210930_エクセルをMDに'  # 元ネタが存在するディレクトリを指定。Dropbox上でもいいけど、容量節約で実態がないモードにしているとたぶん動かない。
+    srcDir = '20210930_エクセルをMDに'  # 元ネタが存在するディレクトリを指定。Dropbox上でもいいけど、容量節約で実態がないモードにしているとたぶん動かない。素直にローカルPCのWorkとかでお願いします。
+    # アウトプットディレクトリのパスを生成
+    dstDir = srcDir + '_Markdown_' + datetime.datetime.today().strftime("%Y%m%d%H%M%S")
+
+    isSkipInit = True   # 初回はかならずFalseで。2回目以降はめんどいからFalseでもよいよ。
+
     main()
 
     print('★End - PG')

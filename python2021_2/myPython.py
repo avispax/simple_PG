@@ -8,7 +8,7 @@ import openpyxl  # エクセル操作。要「pip install openpyxl」。ちな�
 from concurrent.futures import ThreadPoolExecutor
 
 ORIGINAL_EXCEL_DIRECTORY = ""  # インプットディレクトリ。元ネタ。作業用ディレクトリ作成時に、最初の1回だけ参照する。
-WORK_DIRECTORY = "work"  # 作業用ディレクトリ。bakや作成中のディレクトリを削除。ここのエクセルを読み込んで、markdownを生成する。
+WORK_DIRECTORY = ""  # 作業用ディレクトリ。bakや作成中のディレクトリを削除。ここのエクセルを読み込んで、markdownを生成する。
 OUTPUT_DIRECTORY = ""  # アウトプットディレクトリ。ここにmdを生成する。
 IS_SKIP_INIT = False    # 初期化処理（init()）を実行するかどうか。スキップする場合（True）、work ディレクトリ とかを毎回やらない。めんどくさい人用。
 
@@ -51,7 +51,7 @@ class ScreenDesignData:
                                  '## レイアウト\n'
                                  '\n'
                                  '  - 画面タイトル1  \n'
-                                 '    ![画面1](img/1.jpg)\n'
+                                 '    ![画面1](img\1.jpg)\n'
                                  '\n'
                                  '------------------------------------------------------------------------------------------\n'
                                  '\n'
@@ -200,7 +200,7 @@ class ReportData:   # 帳票設計書クラス
                                  '## レイアウト\n'
                                  '\n'
                                  '  - 画面タイトル1  \n'
-                                 '    ![画面1](img/1.jpg)\n'
+                                 '    ![画面1](img\1.jpg)\n'
                                  '\n'
                                  '------------------------------------------------------------------------------------------\n'
                                  '\n'
@@ -344,7 +344,7 @@ def init():
     # もし「work」があるなら削除
     try:
         shutil.rmtree('work')
-    except shutil.Error:
+    except FileNotFoundError:
         pass
 
     # ディレクトリをまるごと別ディレクトリとして同階層にコピー。名前は workDir のとおり。
@@ -620,7 +620,7 @@ def convert_thread(file):
         return
 
     # アウトプット準備 : ディレクトリ作成
-    dir_path = file.replace(WORK_DIRECTORY, OUTPUT_DIRECTORY)    # work のままなのでアウトプットディレクトリにリネーム。
+    dir_path = file.replace(file[:file.find('\\')], OUTPUT_DIRECTORY)    # # 先頭のディレクトリパスを取得して、アウトプットディレクトリに置き換える
     file_name = os.path.splitext(os.path.basename(file))[0].rstrip()  # ファイル名（拡張子なし）
     dir_path = os.path.dirname(dir_path) + os.sep + file_name  # ↑のファイル名を付与したディレクトリにする。階層深くなるけどそういうもの。
     os.makedirs(dir_path + os.sep + 'img', exist_ok=True)    # img の階層まで一気にディレクトリ作成
@@ -679,10 +679,12 @@ if __name__ == '__main__':
 
     # さぁがんばろ
     ORIGINAL_EXCEL_DIRECTORY = '20210930_エクセルをMDに'  # 元ネタが存在するディレクトリを指定。Dropbox上でもいいけど、容量節約で実態がないモードにしているとたぶん動かない。素直にローカルPCのWorkとかでお願いします。
+    # ワークディレクトリのパスを生成
+    WORK_DIRECTORY = 'work'
     # アウトプットディレクトリのパスを生成
-    OUTPUT_DIRECTORY = ORIGINAL_EXCEL_DIRECTORY + '_Markdown_' + datetime.datetime.today().strftime("%Y%m%d%H%M%S")
+    OUTPUT_DIRECTORY = 'Output_Markdown_' + datetime.datetime.today().strftime("%Y%m%d%H%M%S")
 
-    IS_SKIP_INIT = True   # 初回はかならずFalseで。2回目以降はめんどいからTrue（スキップする）でもよい。
+    IS_SKIP_INIT = False   # 初回はかならずFalseで。2回目以降はめんどいからTrue（スキップする）でもよい。
 
     main()
 

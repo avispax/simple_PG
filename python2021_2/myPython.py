@@ -484,24 +484,24 @@ def read_sheets_for_screen_design(title, wb):
         while ws.cell(row, 1).value != '機能ID':    # 機能名と機能IDが存在する行まで行カーソルを移動
             row = row + 1
 
-        data['id'] = ws.cell(row + 1, 1).value    # 機能IDを取得
+        data['id'] = ws.cell(row + 1, 1).value or ''    # 機能IDを取得
 
         while ws.cell(row, col).value != '機能名':  # 機能名が存在する列まで列カーソルを移動
             col = col + 1
 
-        data['name'] = ws.cell(row + 1, col).value  # 機能名を取得
+        data['name'] = ws.cell(row + 1, col).value or ''  # 機能名を取得
 
         # 入力と出力
         col = 1
         while ws.cell(row, 1).value != '入力':    # 行カーソル移動
             row = row + 1
 
-        data['input'] = ws.cell(row + 1, 1).value    # 入力の内容を取得
+        data['input'] = ws.cell(row + 1, 1).value or ''    # 入力の内容を取得
 
         while ws.cell(row, col).value != '出力':  # 列カーソル移動
             col = col + 1
 
-        data['output'] = ws.cell(row + 1, col).value  # 出力の内容を取得
+        data['output'] = ws.cell(row + 1, col).value or ''  # 出力の内容を取得
 
         # 処理内容
         col = 1
@@ -639,16 +639,15 @@ def exec():
 
     # まずは画面設計書
     # ls = glob.glob(WORK_DIRECTORY + '\\*画面設計書\\**\\*.xlsx', recursive=True)
-    ls = ['work\\06.画面設計書\\共通パーツデザイン\\画面設計書_SC02-03-01_共通パーツデザイン（値引対象）.xlsx',
-          'work\\06.画面設計書\\共通パーツデザイン\\画面設計書_SC02-03-01_共通パーツデザイン（値引対象）2.xlsx',
+    ls = ['work\\06.画面設計書\\共通パーツデザイン\\画面設計書_SC02-04-01_共通パーツデザイン（店舗・配送拠点）.xlsx',
           ]
     # ls = ['work\\画面設計書_機能設計_サンプル.xlsx']
 
     # 次に帳票設計書
     # ls = glob.glob(WORK_DIRECTORY + '\\*帳票設計書\\**\\*.xlsx', recursive=True)
-    ls = ls + ['work\\15.帳票設計書\\店舗管理\\商品管理\\0019_【機密(Ａ)】【新お届け】帳票設計書_チラシ商品 Soldout表示リスト .xlsx',
-               'work\\15.帳票設計書\\店舗管理\\精算管理\\0001_【機密(Ａ)】【新お届け】帳票設計書_ネットスーパー売上集計表.xlsx',
-               'work\\15.帳票設計書\\店舗管理\\集荷管理\\0002_【機密(Ａ)】【新お届け】帳票設計書_お客様メモ.xlsx']
+    # ls = ls + ['work\\15.帳票設計書\\店舗管理\\商品管理\\0019_【機密(Ａ)】【新お届け】帳票設計書_チラシ商品 Soldout表示リスト .xlsx',
+    #            'work\\15.帳票設計書\\店舗管理\\精算管理\\0001_【機密(Ａ)】【新お届け】帳票設計書_ネットスーパー売上集計表.xlsx',
+    #            'work\\15.帳票設計書\\店舗管理\\集荷管理\\0002_【機密(Ａ)】【新お届け】帳票設計書_お客様メモ.xlsx']
 
     # メール設計書
 

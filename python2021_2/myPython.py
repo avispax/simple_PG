@@ -280,7 +280,9 @@ class MailData:   # メール設計書クラス
                                  '\n'
                                  '## サンプル\n'
                                  '\n'
+                                 '```Sample\n'
                                  '@specSample'
+                                 '```\n'
                                  '\n'
                                  )
 
@@ -294,13 +296,22 @@ class MailData:   # メール設計書クラス
                       .replace('@specTitle', self.title)
                       .replace('@specVersion', str('{:.2f}'.format(round(version, 2))))  # バージョンは「##.##」の形式になるように四捨五入とフォーマットをカマす。
                       .replace('@specHistory', array_to_markdown_table(self.history, '改訂履歴'))
-                      .replace('@specOverview', self.layout['Overview'])
-                      .replace('@specMailTemplate', self.layout['MailTemplate'])
-                      .replace('@specMailItems', array_to_markdown_table(self.reportItems, 'メール項目'))
-                      .replace('@specSample', self.sample, 'サンプル')
+                      .replace('@specOverview', self.mailTemplate['Overview'])
+                      .replace('@specMailTemplate', array_to_markdown_table(self.mailTemplate['MailTemplate'], 'メールテンプレート'))
+                      .replace('@specMailItems', array_to_markdown_table(self.mailItems, 'メール項目'))
+                      .replace('@specSample', self.generate_sample())
                       )
 
         return output_str
+
+    def generate_sample(self):
+
+        # ガード節
+        if self.sample is None or len(self.sample) == 0:
+            return '- 定義なし\n'
+
+        # 配列が突っ込んであるので、Markdown用の1文に整形する
+        return '\n'.join(self.sample)
 
 
 def array_to_markdown_table(array, sheet_title):    # 配列をマークダウンのテーブル形式に変換
@@ -363,6 +374,17 @@ def init():
 
     # お掃除 : 「作成中」ディレクトリは削除。つーかこういうのもうGitとかで管理して、完成したやつだけコミットしろや。履歴管理は履歴管理サービスに任せぇ！
     file_list = glob.glob(WORK_DIRECTORY + '\\**\\*作成中', recursive=True)
+    for file in file_list:
+        print(file)
+        try:
+            shutil.rmtree(file)
+            continue
+
+        except FileNotFoundError:
+            continue
+
+    # お掃除 : 「bk」ディレクトリは削除。
+    file_list = glob.glob(WORK_DIRECTORY + '\\**\\bk', recursive=True)
     for file in file_list:
         print(file)
         try:
@@ -558,10 +580,9 @@ def read_sheets_for_mail(title, wb):
 
     d.history = read_sheet(wb, '改訂履歴')    # 改訂履歴読み込み
 
-    # メールテンプレート読み込み関数 : 関数化した意味 → 可読性だけ。字下げかつエディタ上で閉じれるから。使い回す予定なし。
-    def read_mail_template(wb, dict):
+    # メールテンプレート読み込み関数 : 関数化した意味 → 字下げかつエディタ上で閉じれるという自分用可読性だけ。使い回す予定なし。
+    def read_mail_template(ws, dict):
 
-        ws = wb['メールテンプレート']
         row = col = 1   # 行カーソルと列カーソルをセルの「A1」で初期化。ここから下に探索する。
 
         # 概要欄探索
@@ -573,22 +594,28 @@ def read_sheets_for_mail(title, wb):
         while ws.cell(row, col).value != '送信元(From)':    # 「送信元(From)」を探索
             row = row + 1
 
-        # 送信元(From) のひとつ上がタイトル行なので、そこからタイトルを取得する。固定で。「 」「項目」「繰返」「備考」の4つ
+        # 送信元(From) のタイトルを固定で取得する。「 」「項目」「繰返」「備考」の4つ
         array = [[' ', '項目', '繰返', '備考']]
-        while ws.cell(row, col).value != '添付ファイル':
-            array.append([ws.cell(row, n).value for n in range(1, 4)])
-            row = row + 1
 
-        # 添付ファイルはとりあえずファイルとして記載がある部分だけを走査キーにして取得する
+        # 表全部を取得する
+        for rowdata in ws.iter_rows(min_row=row, max_row=ws.max_row, min_col=1, max_col=4):  # 行の内容を指定の範囲で 1セルずつ取得。数値とかが入ってても困るので文字列にキャストする。
+            array.append([str(cell.value) if cell.value is not None else ' ' for cell in rowdata])
 
         dict['MailTemplate'] = array
 
-        # 添付ファイル
-        array = []
+    read_mail_template(wb['メールテンプレート'], d.mailTemplate)    # メールテンプレート読み込み
 
-    read_mail_template(wb['メールテンプレート', d.mailTemplate])    # メールテンプレート読み込み
+    d.mailItems = read_sheet(wb, 'メール項目')    # 帳票項目読み込み
 
-    read_sheet(wb['メール項目'], d.mailItems)    # 帳票項目読み込み
+    # サンプル読み込み関数 : 関数化した意味 → 字下げかつエディタ上で閉じれるという自分用可読性だけ。使い回す予定なし。
+    def read_mail_sample(ws, array):
+
+        for row in range(1, ws.max_row):
+            array.append(str(ws.cell(row, 1).value) if ws.cell(row, 1).value is not None else '')
+
+    read_mail_sample(wb['サンプル'], d.sample)
+
+    return d
 
 
 def convert_thread(file):
@@ -611,6 +638,7 @@ def convert_thread(file):
 
     else:
         print('■ error - noFunc : ' + file)
+        return
 
     d = None
     try:
@@ -620,7 +648,7 @@ def convert_thread(file):
         return
 
     # アウトプット準備 : ディレクトリ作成
-    dir_path = file.replace(file[:file.find('\\')], OUTPUT_DIRECTORY)    # # 先頭のディレクトリパスを取得して、アウトプットディレクトリに置き換える
+    dir_path = file.replace(file[:file.find('\\')], OUTPUT_DIRECTORY)    # 先頭のディレクトリパスを取得して、アウトプットディレクトリに置き換える
     file_name = os.path.splitext(os.path.basename(file))[0].rstrip()  # ファイル名（拡張子なし）
     dir_path = os.path.dirname(dir_path) + os.sep + file_name  # ↑のファイル名を付与したディレクトリにする。階層深くなるけどそういうもの。
     os.makedirs(dir_path + os.sep + 'img', exist_ok=True)    # img の階層まで一気にディレクトリ作成
@@ -637,19 +665,19 @@ def exec():
 
     # エクセルファイルの一覧を取得（or 指定）して順次読み込み。なんにせよリスト型になってればOK
 
-    # まずは画面設計書
+    # 画面設計書
     # ls = glob.glob(WORK_DIRECTORY + '\\*画面設計書\\**\\*.xlsx', recursive=True)
-    ls = ['work\\06.画面設計書\\共通パーツデザイン\\画面設計書_SC02-04-01_共通パーツデザイン（店舗・配送拠点）.xlsx',
-          ]
+    # ls = ['work\\06.画面設計書\\共通パーツデザイン\\画面設計書_SC02-04-01_共通パーツデザイン（店舗・配送拠点）.xlsx',]
     # ls = ['work\\画面設計書_機能設計_サンプル.xlsx']
 
-    # 次に帳票設計書
+    # 帳票設計書
     # ls = glob.glob(WORK_DIRECTORY + '\\*帳票設計書\\**\\*.xlsx', recursive=True)
     # ls = ls + ['work\\15.帳票設計書\\店舗管理\\商品管理\\0019_【機密(Ａ)】【新お届け】帳票設計書_チラシ商品 Soldout表示リスト .xlsx',
     #            'work\\15.帳票設計書\\店舗管理\\精算管理\\0001_【機密(Ａ)】【新お届け】帳票設計書_ネットスーパー売上集計表.xlsx',
     #            'work\\15.帳票設計書\\店舗管理\\集荷管理\\0002_【機密(Ａ)】【新お届け】帳票設計書_お客様メモ.xlsx']
 
     # メール設計書
+    ls = glob.glob(WORK_DIRECTORY + '\\*メール設計書\\**\\*.xlsx', recursive=True)
 
     # 作業開始
     with ThreadPoolExecutor(max_workers=6) as pool:
@@ -681,7 +709,7 @@ if __name__ == '__main__':
     # ワークディレクトリのパスを生成
     WORK_DIRECTORY = 'work'
     # アウトプットディレクトリのパスを生成
-    OUTPUT_DIRECTORY = 'Output_Markdown_' + datetime.datetime.today().strftime("%Y%m%d%H%M%S")
+    OUTPUT_DIRECTORY = 'zz.markdown_' + datetime.datetime.today().strftime("%Y%m%d%H%M%S")
 
     IS_SKIP_INIT = False   # 初回はかならずFalseで。2回目以降はめんどいからTrue（スキップする）でもよい。
 

@@ -442,7 +442,7 @@ def read_sheet(wb, title):
         # 改訂履歴だけ項目が2段になってるから2つずらすし、列も「版数」のセルを対象とする。なんか右端に段組のセル分を調整する。
         # こいつ異フォーマットすぎて関数化しなけりゃよかった。
         r = r + 2
-        targetcol = 2
+        targetcol = 5
         maxcol = maxcol + 3
 
         # ついでに項目ももうこっちで作っちゃう。他の表はセルを読んで自動取得+生成だけど、こいつめんどくさい。
@@ -686,7 +686,8 @@ def exec():
 
     # 画面設計書
     # ls = glob.glob(WORK_DIRECTORY + '\\*画面設計書\\**\\*.xlsx', recursive=True)
-    ls = ['work\\06.画面設計書\\共通パーツデザイン\\画面設計書_SC02-04-01_共通パーツデザイン（店舗・配送拠点）.xlsx', ]
+    ls = ['work\\06.画面設計書\\共通パーツデザイン\\画面設計書_SC02-04-01_共通パーツデザイン（店舗・配送拠点）.xlsx',
+          'work\\06.画面設計書\\店舗管理\\医薬品受注管理\\画面設計書_SC25-01-02_受注伝票検索一覧（医薬品受注管理）.xlsx']
     # ls = ['work\\画面設計書_機能設計_サンプル.xlsx']
 
     # 帳票設計書
@@ -734,9 +735,9 @@ if __name__ == '__main__':
     # ワークディレクトリのパスを生成
     WORK_DIRECTORY = 'work'
     # アウトプットディレクトリのパスを生成
-    OUTPUT_DIRECTORY = 'zz.markdown_' + datetime.datetime.today().strftime("%Y%m%d%H%M%S")
+    OUTPUT_DIRECTORY = 'zz_markdown_' + datetime.datetime.today().strftime("%Y%m%d%H%M%S")
 
-    IS_SKIP_INIT = True   # 初回はかならずFalseで。2回目以降はめんどいからTrue（スキップする）でもよい。
+    IS_SKIP_INIT = False   # 初回はかならずFalseで。2回目以降はめんどいからTrue（スキップする）でもよい。
 
     main()
 

@@ -11,6 +11,15 @@ ORIGINAL_EXCEL_DIRECTORY = ""  # インプットディレクトリ。元ネタ�
 WORK_DIRECTORY = ""  # 作業用ディレクトリ。bakや作成中のディレクトリを削除。ここのエクセルを読み込んで、markdownを生成する。
 OUTPUT_DIRECTORY = ""  # アウトプットディレクトリ。ここにmdを生成する。
 IS_SKIP_INIT = False    # 初期化処理（init()）を実行するかどうか。スキップする場合（True）、work ディレクトリ とかを毎回やらない。めんどくさい人用。
+CSS_TEXT = ('/* 画像の区切りが見づらいとの指摘に対して黒い枠線を付与 */\n'
+            'img { border: 1px black solid;}\n'
+            '\n'
+            '/* 見出しが分かりづらいとの指摘に対して各種文字飾りを付与*/\n'
+            'h1 { font-weight:bold;}\n'
+            'h2 { color: green;}\n'
+            'h3 { background-color: lightcyan;}\n'
+            'h4 { border: 5px lightgrey double;}'
+            )
 
 
 class ScreenDesignData:
@@ -26,9 +35,9 @@ class ScreenDesignData:
         self.functions = {}  # 機能設計群
 
         # Markdown定型文
-        self.markdownTemplate = ('# イトーヨーカドーネットスーパー<br><br>@specTitle 画面設計書\n'
+        self.markdownTemplate = ('<link rel="stylesheet" type="text/css" href="style.css">\n'
                                  '\n'
-                                 'ver.@specVersion\n'
+                                 '# イトーヨーカドーネットスーパー<br><br>@specTitle 画面設計書\n'
                                  '\n'
                                  '株式会社ビッグツリーテクノロジー＆コンサルティング\n'
                                  '\n'
@@ -72,7 +81,7 @@ class ScreenDesignData:
                                  '\n'
                                  '------------------------------------------------------------------------------------------\n'
                                  '\n'
-                                 '## 入力チェック\n'
+                                 '## 各種チェック\n'
                                  '\n'
                                  '### 入力チェック  \n'
                                  '\n'
@@ -89,9 +98,7 @@ class ScreenDesignData:
                                  '@functions'
                                  )
 
-        self.markdownTemplate_functions = ('### @name\n'
-                                           '\n'
-                                           '- id : @id\n'
+        self.markdownTemplate_functions = ('### @id : @name\n'
                                            '\n'
                                            '#### 入力\n'
                                            '\n'
@@ -156,8 +163,8 @@ class ScreenDesignData:
         sorted_functions = sorted(self.functions.items(), key=lambda x: x[0])
         for k, v in sorted_functions:    # キーでソートしながら中身を取り出す。sheetNamesはシートの並び順だが、dictの順序が保証されてるか怪しかったので。
             return_str = return_str + (self.markdownTemplate_functions
-                                       .replace('@name', v['name'])
                                        .replace('@id', str(v['id'] or ''))
+                                       .replace('@name', v['name'])
                                        .replace('@input', '- ' + v['input'].replace('\n', '\n- '))
                                        .replace('@output', '- ' + v['output'].replace('\n', '\n- '))
                                        .replace('@processDetail', v['processDetail'])
@@ -175,9 +182,9 @@ class ReportData:   # 帳票設計書クラス
         self.events = []    # イベント一覧
 
         # Markdown定型文
-        self.markdownTemplate = ('# イトーヨーカドーネットスーパー<br><br>@specTitle 帳票設計書\n'
+        self.markdownTemplate = ('<link rel="stylesheet" type="text/css" href="style.css">\n'
                                  '\n'
-                                 'ver.@specVersion\n'
+                                 '# イトーヨーカドーネットスーパー<br><br>@specTitle 帳票設計書\n'
                                  '\n'
                                  '株式会社ビッグツリーテクノロジー＆コンサルティング\n'
                                  '\n'
@@ -244,9 +251,9 @@ class MailData:   # メール設計書クラス
         self.sample = []    # サンプル
 
         # Markdown定型文
-        self.markdownTemplate = ('# イトーヨーカドーネットスーパー<br><br>@specTitle メール設計書\n'
+        self.markdownTemplate = ('<link rel="stylesheet" type="text/css" href="style.css">\n'
                                  '\n'
-                                 'ver.@specVersion\n'
+                                 '# イトーヨーカドーネットスーパー<br><br>@specTitle メール設計書\n'
                                  '\n'
                                  '株式会社ビッグツリーテクノロジー＆コンサルティング\n'
                                  '\n'
@@ -328,10 +335,15 @@ def array_to_markdown_table(array, sheet_title):    # 配列をマークダウ�
 
         # 結合に向けての準備
         for col in range(len(arr)):
-            if isinstance(arr[col], str):
-                arr[col] = arr[col].replace('\n', '<br>')  # str 型なら 改行コード（\n）の存在に気をつけて、基本はそのまま採用。
-            elif arr[col] is None:
+            # 先頭の方はガード節やシート限定の特殊処理を記載
+            if arr[col] is None:    # ガード節
                 arr[col] = ' '    # None（値が入っていなかったセル）は「 」（半角スペース）を設定。マークダウンの表として「 」が必要なので。
+
+            elif sheet_title == '画面項目' and col == 11:  # 画面設計書の画面項目の導出元（12列目） は 改行コードがあれば改行を2つ重ねる。そういうもん。
+                arr[col] = arr[col].replace('\n', '<br><br>')  # str 型なら 改行コード（\n）の存在に気をつけて、基本はそのまま採用。
+
+            elif sheet_title == '帳票項目' and col == 10:   # 帳票設計書の帳票項目の導出元（１１列目）は 改行コードがあれば改行を2つ重ねる。そういうもん。
+                arr[col] = arr[col].replace('\n', '<br><br>')  # str 型なら 改行コード（\n）の存在に気をつけて、基本はそのまま採用。
 
             elif sheet_title == '改訂履歴' and col == 1:  # シート「改訂履歴」専用処理。
                 # なお、まれに各セルが 数値や日付 + フォーマット ではなく文字列としてそのまま書かれている状況もある。それはもうわざとやっているとみなし、先頭の分岐でそのまま採用している。
@@ -339,6 +351,10 @@ def array_to_markdown_table(array, sheet_title):    # 配列をマークダウ�
                 # TODO 端数処理:切り捨て
             elif sheet_title == '改訂履歴' and col == 2:
                 arr[col] = f'{arr[col]:%Y/%m/%d}'   # 日付型をフォーマットする。「2021/01/01」形式
+
+            # この辺から一般処理
+            elif isinstance(arr[col], str):
+                arr[col] = arr[col].replace('\n', '<br>')  # str 型なら 改行コード（\n）の存在に気をつけて、基本はそのまま採用。
 
             else:
                 arr[col] = str(arr[col]).replace('\n', '<br>')  # なんかわからないものはすべてstr型に変更する。改行コード（\n）の存在に気をつけて、基本はそのまま採用。
@@ -653,10 +669,13 @@ def convert_thread(file):
     dir_path = os.path.dirname(dir_path) + os.sep + file_name  # ↑のファイル名を付与したディレクトリにする。階層深くなるけどそういうもの。
     os.makedirs(dir_path + os.sep + 'img', exist_ok=True)    # img の階層まで一気にディレクトリ作成
 
+    # css ファイル作成
+    with open(dir_path + os.sep + 'style.css', mode='w', encoding='utf-8_sig') as f:
+        f.write(CSS_TEXT)
+
     # md生成
     output_file_name = dir_path + os.sep + file_name + '.md'
     with open(output_file_name, mode='w', encoding='utf-8_sig') as f:
-        # for s in md:
         f.write(d.generate_markdown() + '\n')
 
 
@@ -667,17 +686,23 @@ def exec():
 
     # 画面設計書
     # ls = glob.glob(WORK_DIRECTORY + '\\*画面設計書\\**\\*.xlsx', recursive=True)
-    # ls = ['work\\06.画面設計書\\共通パーツデザイン\\画面設計書_SC02-04-01_共通パーツデザイン（店舗・配送拠点）.xlsx',]
+    ls = ['work\\06.画面設計書\\共通パーツデザイン\\画面設計書_SC02-04-01_共通パーツデザイン（店舗・配送拠点）.xlsx', ]
     # ls = ['work\\画面設計書_機能設計_サンプル.xlsx']
 
     # 帳票設計書
     # ls = glob.glob(WORK_DIRECTORY + '\\*帳票設計書\\**\\*.xlsx', recursive=True)
-    # ls = ls + ['work\\15.帳票設計書\\店舗管理\\商品管理\\0019_【機密(Ａ)】【新お届け】帳票設計書_チラシ商品 Soldout表示リスト .xlsx',
-    #            'work\\15.帳票設計書\\店舗管理\\精算管理\\0001_【機密(Ａ)】【新お届け】帳票設計書_ネットスーパー売上集計表.xlsx',
-    #            'work\\15.帳票設計書\\店舗管理\\集荷管理\\0002_【機密(Ａ)】【新お届け】帳票設計書_お客様メモ.xlsx']
+    ls = ls + ['work\\15.帳票設計書\\店舗管理\\商品管理\\【機密(Ａ)】【新お届け】帳票設計書_FM19_チラシ商品Soldout表示リスト .xlsx',
+               'work\\15.帳票設計書\\店舗管理\\精算管理\\【機密(Ａ)】【新お届け】帳票設計書_FM01_ネットスーパー売上集計表.xlsx',
+               'work\\15.帳票設計書\\店舗管理\\集荷管理\\【機密(Ａ)】【新お届け】帳票設計書_FM02_お客様メモ.xlsx']
 
     # メール設計書
-    ls = glob.glob(WORK_DIRECTORY + '\\*メール設計書\\**\\*.xlsx', recursive=True)
+    # ls = glob.glob(WORK_DIRECTORY + '\\*メール設計書\\**\\*.xlsx', recursive=True)
+    ls = ls + ['work\\17.メール設計書\\スコープ管理\\メール設計書_ML08-001_アカチャンホンポ広告商品カテゴリ削除.xlsx',
+               'work\\17.メール設計書\\スコープ管理\\メール設計書_ML08-002_アカチャンホンポ広告商品カテゴリ追加.xlsx',
+               'work\\17.メール設計書\\スコープ管理\\メール設計書_ML08-003_衣料品番反映完了.xlsx',
+               'work\\17.メール設計書\\スコープ管理\\メール設計書_ML08-004_アピール文言設定反映完了.xlsx',
+               'work\\17.メール設計書\\スコープ管理\\メール設計書_ML08-005_医薬品設問設定更新反映完了.xlsx',
+               ]
 
     # 作業開始
     with ThreadPoolExecutor(max_workers=6) as pool:
@@ -711,7 +736,7 @@ if __name__ == '__main__':
     # アウトプットディレクトリのパスを生成
     OUTPUT_DIRECTORY = 'zz.markdown_' + datetime.datetime.today().strftime("%Y%m%d%H%M%S")
 
-    IS_SKIP_INIT = False   # 初回はかならずFalseで。2回目以降はめんどいからTrue（スキップする）でもよい。
+    IS_SKIP_INIT = True   # 初回はかならずFalseで。2回目以降はめんどいからTrue（スキップする）でもよい。
 
     main()
 

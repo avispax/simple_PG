@@ -427,14 +427,12 @@ def read_sheet(wb, title):
         maxcol = maxcol + 1
 
     if ws.title == '改訂履歴':
-        # 改訂履歴だけ項目が2段になってるから2つずらすし、列も「版数」のセルを対象とする。なんか右端に段組のセル分を調整する。
-        # こいつ異フォーマットすぎて関数化しなけりゃよかった。
+        # 改訂履歴だけ項目が2段になってるから2つずらすし、列は「改定箇所」のセルを対象とする。
         r = r + 2
         targetcol = 5
-        maxcol = maxcol + 3
 
         # ついでに項目ももうこっちで作っちゃう。他の表はセルを読んで自動取得+生成だけど、こいつめんどくさい。
-        list.append(['項番', '版数', '更新日付', '更新者', '改定箇所', '改定内容', '改定理由', '機能要件承認_担当者', '機能要件承認_第三者', '非機能要件承認_担当者', '非機能要件承認_第三者'])
+        list.append(['項番', '版数', '更新日付', '更新者', '改定箇所', '改定内容', '改定理由'])
 
     while ws.cell(r, targetcol).value is not None:  # 行 ： 空っぽのセルが出てくるまでループする。
         list.append([ws.cell(r, n).value for n in range(1, maxcol)])  # 列「A」から「maxcol」までを1行分の列ループ。ちなみに空のセルは「None」が入る。
@@ -724,7 +722,7 @@ if __name__ == '__main__':
     # アウトプットディレクトリのパスを生成
     OUTPUT_DIRECTORY = 'zz_markdown_' + datetime.datetime.today().strftime("%Y%m%d%H%M%S")
 
-    IS_SKIP_INIT = False   # 初回はかならずFalseで。2回目以降はめんどいからTrue（スキップする）でもよい。
+    IS_SKIP_INIT = True   # 初回はかならずFalseで。2回目以降はめんどいからTrue（スキップする）でもよい。
 
     main()
 

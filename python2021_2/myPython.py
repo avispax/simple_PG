@@ -597,13 +597,50 @@ def read_sheets_for_mail(title, wb):
             row = row + 1
 
         # 送信元(From) のタイトルを固定で取得する。「 」「項目」「繰返」「備考」の4つ
-        array = [[' ', '項目', '繰返', '備考']]
+        table_array = [[' ', '項目', '繰返', '備考']]
+
+        # []探索用関数
+        def search_func(s, pos_start):
+            b = s.find(']', pos_start)
+            a = s.rfind('[', pos_start, b)
+            return a, b
 
         # 表全部を取得する
-        for rowdata in ws.iter_rows(min_row=row, max_row=ws.max_row, min_col=1, max_col=4):  # 行の内容を指定の範囲で 1セルずつ取得。数値とかが入ってても困るので文字列にキャストする。
-            array.append([str(cell.value) if cell.value is not None else ' ' for cell in rowdata])
+        for rowdata in ws.iter_rows(min_row=row, max_row=ws.max_row, min_col=1, max_col=4):  # 行の内容を指定の範囲で 1行ずつ取得。
+            row_array = []
+            # array.append([str(cell.value) if cell.value is not None else ' ' for cell in rowdata])
 
-        dict['MailTemplate'] = array
+            for i, cell in enumerate(rowdata):    # 行データから1セルずつ取得
+
+                if i == 1 and cell.value is not None:
+                    # まず[]に挟まれた単語の一覧を取得する
+                    sb_list = []  # 角カッコのSquareBrackets用配列
+                    v = str(cell.value)  # v は cell.value の v
+                    pos_start = 0
+                    while True:
+
+                        pos_start, pos_end = search_func(v, pos_start)
+
+                        if pos_end == -1:
+                            break
+                        elif pos_start == -1:
+                            pos_start = pos_end + 1
+                            continue
+                        else:
+                            sb_list.append(v[pos_start + 1:pos_end])
+                            pos_start = pos_end + 1
+
+                    # その一覧を太字斜体に装飾する
+                    for s in sb_list:
+                        v = v.replace('[' + s + ']', '***[' + s + ']***')
+
+                    row_array.append(v)
+                else:
+                    row_array.append(str(cell.value) if cell.value is not None else ' ')
+
+            table_array.append(row_array)
+
+        dict['MailTemplate'] = table_array
 
     read_mail_template(wb['メールテンプレート'], d.mailTemplate)    # メールテンプレート読み込み
 
@@ -672,7 +709,7 @@ def exec():
 
     # 画面設計書
     # ls = glob.glob(WORK_DIRECTORY + '\\*画面設計書\\**\\*.xlsx', recursive=True)
-    ls = ['work\\06.画面設計書\\店舗管理\\ＰＬ照会\\画面設計書_SC26-01-01_PL照会.xlsx']
+    # ls = ['work\\06.画面設計書\\店舗管理\\ＰＬ照会\\画面設計書_SC26-01-01_PL照会.xlsx']
     # ls = ['work\\画面設計書_機能設計_サンプル.xlsx']
 
     # 帳票設計書
@@ -683,12 +720,14 @@ def exec():
 
     # メール設計書
     # ls = glob.glob(WORK_DIRECTORY + '\\*メール設計書\\**\\*.xlsx', recursive=True)
-    # ls = ls + ['work\\17.メール設計書\\スコープ管理\\メール設計書_ML08-001_アカチャンホンポ広告商品カテゴリ削除.xlsx',
-    #            'work\\17.メール設計書\\スコープ管理\\メール設計書_ML08-002_アカチャンホンポ広告商品カテゴリ追加.xlsx',
-    #            'work\\17.メール設計書\\スコープ管理\\メール設計書_ML08-003_衣料品番反映完了.xlsx',
-    #            'work\\17.メール設計書\\スコープ管理\\メール設計書_ML08-004_アピール文言設定反映完了.xlsx',
-    #            'work\\17.メール設計書\\スコープ管理\\メール設計書_ML08-005_医薬品設問設定更新反映完了.xlsx',
-    #            ]
+    ls = ['work\\17.メール設計書\\スコープ管理\\メール設計書_ML08-001_アカチャンホンポ広告商品カテゴリ削除.xlsx', ]
+
+    # ls = ['work\\17.メール設計書\\スコープ管理\\メール設計書_ML08-001_アカチャンホンポ広告商品カテゴリ削除.xlsx',
+    #       'work\\17.メール設計書\\スコープ管理\\メール設計書_ML08-002_アカチャンホンポ広告商品カテゴリ追加.xlsx',
+    #       'work\\17.メール設計書\\スコープ管理\\メール設計書_ML08-003_衣料品番反映完了.xlsx',
+    #       'work\\17.メール設計書\\スコープ管理\\メール設計書_ML08-004_アピール文言設定反映完了.xlsx',
+    #       'work\\17.メール設計書\\スコープ管理\\メール設計書_ML08-005_医薬品設問設定更新反映完了.xlsx',
+    #       ]
 
     # 作業開始
     with ThreadPoolExecutor(max_workers=6) as pool:

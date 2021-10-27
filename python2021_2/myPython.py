@@ -24,7 +24,7 @@ CSS_TEXT = ('/* 画像の区切りが見づらいとの指摘に対して黒い�
 
 class ScreenDesignData:
     def __init__(self):
-        self.title = ""  # タイトル
+        self.title = ''  # タイトル
         self.history = []   # 履歴
         self.layout = {}    # レイアウト : 概要となんか
         self.layoutItems = []  # 画面項目
@@ -118,13 +118,9 @@ class ScreenDesignData:
 
     def generate_markdown(self):
 
-        # バージョン情報を履歴情報から取得。一番最後の配列の2番目の要素を固定で取得。
-        version = self.history[len(self.history) - 1][1]
-
         # マークダウン用の文字列を生成
         output_str = (self.markdownTemplate
                       .replace('@specTitle', self.title)
-                      .replace('@specVersion', str('{:.2f}'.format(round(version, 2))))  # バージョンは「##.##」の形式になるように四捨五入とフォーマットをカマす。
                       .replace('@specHistory', array_to_markdown_table(self.history, '改訂履歴'))
                       .replace('@specOverview', self.layout['Overview'])
                       .replace('@specLayoutItems', array_to_markdown_table(self.layoutItems, '画面項目'))
@@ -225,13 +221,9 @@ class ReportData:   # 帳票設計書クラス
 
     def generate_markdown(self):
 
-        # バージョン情報を履歴情報から取得。一番最後の配列の2番目の要素を固定で取得。
-        version = self.history[len(self.history) - 1][1]
-
         # マークダウン用の文字列を生成
         output_str = (self.markdownTemplate
                       .replace('@specTitle', self.title)
-                      .replace('@specVersion', str('{:.2f}'.format(round(version, 2))))  # バージョンは「##.##」の形式になるように四捨五入とフォーマットをカマす。
                       .replace('@specHistory', array_to_markdown_table(self.history, '改訂履歴'))
                       .replace('@specOverview', self.layout['Overview'])
                       .replace('@specReportItems', array_to_markdown_table(self.reportItems, '帳票項目'))
@@ -295,13 +287,9 @@ class MailData:   # メール設計書クラス
 
     def generate_markdown(self):
 
-        # バージョン情報を履歴情報から取得。一番最後の配列の2番目の要素を固定で取得。
-        version = self.history[len(self.history) - 1][1]
-
         # マークダウン用の文字列を生成
         output_str = (self.markdownTemplate
                       .replace('@specTitle', self.title)
-                      .replace('@specVersion', str('{:.2f}'.format(round(version, 2))))  # バージョンは「##.##」の形式になるように四捨五入とフォーマットをカマす。
                       .replace('@specHistory', array_to_markdown_table(self.history, '改訂履歴'))
                       .replace('@specOverview', self.mailTemplate['Overview'])
                       .replace('@specMailTemplate', array_to_markdown_table(self.mailTemplate['MailTemplate'], 'メールテンプレート'))
@@ -686,24 +674,23 @@ def exec():
 
     # 画面設計書
     # ls = glob.glob(WORK_DIRECTORY + '\\*画面設計書\\**\\*.xlsx', recursive=True)
-    ls = ['work\\06.画面設計書\\共通パーツデザイン\\画面設計書_SC02-04-01_共通パーツデザイン（店舗・配送拠点）.xlsx',
-          'work\\06.画面設計書\\店舗管理\\医薬品受注管理\\画面設計書_SC25-01-02_受注伝票検索一覧（医薬品受注管理）.xlsx']
+    ls = ['work\\06.画面設計書\\店舗管理\\ＰＬ照会\\画面設計書_SC26-01-01_PL照会.xlsx']
     # ls = ['work\\画面設計書_機能設計_サンプル.xlsx']
 
     # 帳票設計書
     # ls = glob.glob(WORK_DIRECTORY + '\\*帳票設計書\\**\\*.xlsx', recursive=True)
-    ls = ls + ['work\\15.帳票設計書\\店舗管理\\商品管理\\【機密(Ａ)】【新お届け】帳票設計書_FM19_チラシ商品Soldout表示リスト .xlsx',
-               'work\\15.帳票設計書\\店舗管理\\精算管理\\【機密(Ａ)】【新お届け】帳票設計書_FM01_ネットスーパー売上集計表.xlsx',
-               'work\\15.帳票設計書\\店舗管理\\集荷管理\\【機密(Ａ)】【新お届け】帳票設計書_FM02_お客様メモ.xlsx']
+    # ls = ls + ['work\\15.帳票設計書\\店舗管理\\商品管理\\【機密(Ａ)】【新お届け】帳票設計書_FM19_チラシ商品Soldout表示リスト .xlsx',
+    #            'work\\15.帳票設計書\\店舗管理\\精算管理\\【機密(Ａ)】【新お届け】帳票設計書_FM01_ネットスーパー売上集計表.xlsx',
+    #            'work\\15.帳票設計書\\店舗管理\\集荷管理\\【機密(Ａ)】【新お届け】帳票設計書_FM02_お客様メモ.xlsx']
 
     # メール設計書
     # ls = glob.glob(WORK_DIRECTORY + '\\*メール設計書\\**\\*.xlsx', recursive=True)
-    ls = ls + ['work\\17.メール設計書\\スコープ管理\\メール設計書_ML08-001_アカチャンホンポ広告商品カテゴリ削除.xlsx',
-               'work\\17.メール設計書\\スコープ管理\\メール設計書_ML08-002_アカチャンホンポ広告商品カテゴリ追加.xlsx',
-               'work\\17.メール設計書\\スコープ管理\\メール設計書_ML08-003_衣料品番反映完了.xlsx',
-               'work\\17.メール設計書\\スコープ管理\\メール設計書_ML08-004_アピール文言設定反映完了.xlsx',
-               'work\\17.メール設計書\\スコープ管理\\メール設計書_ML08-005_医薬品設問設定更新反映完了.xlsx',
-               ]
+    # ls = ls + ['work\\17.メール設計書\\スコープ管理\\メール設計書_ML08-001_アカチャンホンポ広告商品カテゴリ削除.xlsx',
+    #            'work\\17.メール設計書\\スコープ管理\\メール設計書_ML08-002_アカチャンホンポ広告商品カテゴリ追加.xlsx',
+    #            'work\\17.メール設計書\\スコープ管理\\メール設計書_ML08-003_衣料品番反映完了.xlsx',
+    #            'work\\17.メール設計書\\スコープ管理\\メール設計書_ML08-004_アピール文言設定反映完了.xlsx',
+    #            'work\\17.メール設計書\\スコープ管理\\メール設計書_ML08-005_医薬品設問設定更新反映完了.xlsx',
+    #            ]
 
     # 作業開始
     with ThreadPoolExecutor(max_workers=6) as pool:

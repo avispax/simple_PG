@@ -11,14 +11,27 @@ ORIGINAL_EXCEL_DIRECTORY = ""  # インプットディレクトリ。元ネタ�
 WORK_DIRECTORY = ""  # 作業用ディレクトリ。bakや作成中のディレクトリを削除。ここのエクセルを読み込んで、markdownを生成する。
 OUTPUT_DIRECTORY = ""  # アウトプットディレクトリ。ここにmdを生成する。
 IS_SKIP_INIT = False    # 初期化処理（init()）を実行するかどうか。スキップする場合（True）、work ディレクトリ とかを毎回やらない。めんどくさい人用。
-CSS_TEXT = ('/* 画像の区切りが見づらいとの指摘に対して黒い枠線を付与 */\n'
+CSS_TEXT = ('/* 画像の区切りが見づらいとの指摘に対して黒い枠線を付与 */\n'  # style.css の中身。もうこういうファイルを用意して配布するタイプの方がいい気がしてきた。最初は数行だったんだよ。
             'img { border: 1px black solid;}\n'
             '\n'
             '/* 見出しが分かりづらいとの指摘に対して各種文字飾りを付与*/\n'
             'h1 { font-weight:bold;}\n'
-            'h2 { color: green;}\n'
-            'h3 { background-color: lightcyan;}\n'
-            'h4 { border: 5px lightgrey double;}'
+            'h2 { color: midnightblue;}\n'
+            'h3 { background-color: darkblue; font-weight:bold; color: white}\n'
+            'h4 { border: 5px lightgrey double;}\n'
+            '\n'
+            'table {border: 1px solid #e0e0e0;}\n'
+            'th {background: #f0f0f0; border-left: 1px solid #e0e0e0;}\n'
+            'td {border-left: 1px solid #e0e0e0;}\n'
+            'hr {color: midnightblue;}\n'
+            '\n'
+            'footer {\n'
+            '    background: midnightblue;\n'
+            '    color: white;\n'
+            '    padding-left: 30px;\n'
+            '    padding-right: 30px;\n'
+            '    box-sizing: border-box;\n'
+            '}'
             )
 
 
@@ -87,19 +100,21 @@ class ScreenDesignData:
                                  '\n'
                                  '@specInputCheck'
                                  '\n'
-                                 '#### ※メッセージ表示位置画面 項目項番が「－」ハイフンの場合は共通のメッセージエリアに表示する。'
+                                 '  <div class="annotation">*メッセージ表示位置画面 項目項番が「－」ハイフンの場合は共通のメッセージエリアに表示する。</div>\n'
                                  '\n'
                                  '### 業務チェック  \n'
                                  '\n'
                                  '@specBusinessCheck'
                                  '\n'
-                                 '#### ※メッセージ表示位置画面 項目項番が「－」ハイフンの場合は共通のメッセージエリアに表示する。'
+                                 '  <div class="annotation">*メッセージ表示位置画面 項目項番が「－」ハイフンの場合は共通のメッセージエリアに表示する。</div>\n'
                                  '\n'
                                  '------------------------------------------------------------------------------------------\n'
                                  '\n'
                                  '## 機能\n'
                                  '\n'
                                  '@functions'
+                                 '\n'
+                                 '<footer>以上</footer>'
                                  )
 
         self.markdownTemplate_functions = ('### @id : @name\n'
@@ -221,6 +236,7 @@ class ReportData:   # 帳票設計書クラス
                                  '\n'
                                  '@specEvents'
                                  '\n'
+                                 '<footer>以上</footer>'
                                  )
 
     def generate_markdown(self):
@@ -288,6 +304,7 @@ class MailData:   # メール設計書クラス
                                  '@specSample'
                                  '```\n'
                                  '\n'
+                                 '<footer>以上</footer>'
                                  )
 
     def generate_markdown(self):
@@ -688,7 +705,7 @@ def convert_thread(file):
 
     d = None
     try:
-        d = func(file[file.rfind('_') + 1: file.rfind('.')], wb)  # エクセルの各シート読み込み
+        d = func(file[file.find('_') + 1: file.rfind('.')], wb)  # エクセルの各シート読み込み
     except shutil.Error:
         print('■ error : ' + file)
         return
@@ -716,22 +733,22 @@ def exec():
 
     # 画面設計書
     # ls = glob.glob(WORK_DIRECTORY + '\\*画面設計書\\**\\*.xlsx', recursive=True)
-    # ls = ['work\\06.画面設計書\\店舗管理\\ＰＬ照会\\画面設計書_SC26-01-01_PL照会.xlsx']
-    # ls = ['work\\画面設計書_機能設計_サンプル.xlsx']
+    ls = ['work\\06.画面設計書\\管理者管理\\管理者登録\\画面設計書_SC03-02-01_管理者登録.xlsx']
 
     # 帳票設計書
     # ls = glob.glob(WORK_DIRECTORY + '\\*帳票設計書\\**\\*.xlsx', recursive=True)
-    # ls = ls + ['work\\15.帳票設計書\\店舗管理\\商品管理\\【機密(Ａ)】【新お届け】帳票設計書_FM19_チラシ商品Soldout表示リスト .xlsx',
-    #            'work\\15.帳票設計書\\店舗管理\\精算管理\\【機密(Ａ)】【新お届け】帳票設計書_FM01_ネットスーパー売上集計表.xlsx',
-    #            'work\\15.帳票設計書\\店舗管理\\集荷管理\\【機密(Ａ)】【新お届け】帳票設計書_FM02_お客様メモ.xlsx']
+    ls = ls + [
+        'work\\15.帳票設計書\\店舗管理\\商品管理\\【機密(Ａ)】【新お届け】帳票設計書_FM19_チラシ商品Soldout表示リスト .xlsx',
+        #            'work\\15.帳票設計書\\店舗管理\\精算管理\\【機密(Ａ)】【新お届け】帳票設計書_FM01_ネットスーパー売上集計表.xlsx',
+        #            'work\\15.帳票設計書\\店舗管理\\集荷管理\\【機密(Ａ)】【新お届け】帳票設計書_FM02_お客様メモ.xlsx'
+    ]
 
     # メール設計書
     # ls = glob.glob(WORK_DIRECTORY + '\\*メール設計書\\**\\*.xlsx', recursive=True)
     # ls = ['work\\17.メール設計書\\スコープ管理\\メール設計書_ML08-003_衣料品番反映完了.xlsx', ]
 
-    ls = [
+    ls = ls + [
         'work\\17.メール設計書\\スコープ管理\\メール設計書_ML08-004_アピール文言設定反映完了.xlsx',
-        'work\\17.メール設計書\\スコープ管理\\メール設計書_ML04-002_チラシ商品SoldOut店舗別件数メール.xlsx',
     ]
 
     # 作業開始

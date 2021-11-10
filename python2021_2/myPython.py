@@ -100,13 +100,9 @@ class ScreenDesignData:
                                  '\n'
                                  '@specInputCheck'
                                  '\n'
-                                 '  <div class="annotation">*メッセージ表示位置画面 項目項番が「－」ハイフンの場合は共通のメッセージエリアに表示する。</div>\n'
-                                 '\n'
                                  '### 業務チェック  \n'
                                  '\n'
                                  '@specBusinessCheck'
-                                 '\n'
-                                 '  <div class="annotation">*メッセージ表示位置画面 項目項番が「－」ハイフンの場合は共通のメッセージエリアに表示する。</div>\n'
                                  '\n'
                                  '------------------------------------------------------------------------------------------\n'
                                  '\n'
@@ -370,6 +366,12 @@ def array_to_markdown_table(array, sheet_title):    # 配列をマークダウ�
                 arr[col] = str(arr[col]).replace('\n', '<br>')  # なんかわからないものはすべてstr型に変更する。改行コード（\n）の存在に気をつけて、基本はそのまま採用。
 
         s = s + '| ' + ' | '.join(arr) + ' |\n'
+
+    if sheet_title in ['入力チェック', '業務チェック']:
+        s = s + (
+            '\n'
+            '<div class="annotation">*メッセージ表示位置画面 項目項番が「－」ハイフンの場合は共通のメッセージエリアに表示する。</div>\n'
+        )
 
     return s
 
@@ -700,7 +702,7 @@ def convert_thread(file):
         func = read_sheets_for_mail
 
     else:
-        print('■ error - noFunc : ' + file)
+        print('■ NoMatchFileName : ' + file)
         return
 
     d = None
@@ -783,7 +785,7 @@ if __name__ == '__main__':
     # アウトプットディレクトリのパスを生成
     OUTPUT_DIRECTORY = 'zz_markdown_' + datetime.datetime.today().strftime("%Y%m%d%H%M%S")
 
-    IS_SKIP_INIT = True   # 初回はかならずFalseで。2回目以降はめんどいからTrue（スキップする）でもよい。
+    IS_SKIP_INIT = False   # 初回はかならずFalseで。2回目以降はめんどいからTrue（スキップする）でもよい。
 
     main()
 

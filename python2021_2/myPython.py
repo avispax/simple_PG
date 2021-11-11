@@ -693,7 +693,7 @@ def convert_thread(file):
 
     # 各設計書用の読み込み関数を関数オブジェクトとして利用する。
     func = None
-    file_name = os.path.basename(file)
+    # file_name = os.path.basename(file)
     if '画面設計書_' in file:
         func = read_sheets_for_screen_design
     elif '帳票設計書_' in file:
@@ -732,26 +732,25 @@ def exec():
     print('\n★★ 本処理 - start')
 
     # エクセルファイルの一覧を取得（or 指定）して順次読み込み。なんにせよリスト型になってればOK
-
     # 画面設計書
     # ls = glob.glob(WORK_DIRECTORY + '\\*画面設計書\\**\\*.xlsx', recursive=True)
-    ls = ['work\\06.画面設計書\\管理者管理\\管理者登録\\画面設計書_SC03-02-01_管理者登録.xlsx']
+    ls = ['work\\06.画面設計書\\本部管理\\商品値引管理\\画面設計書_SC07-13-01_クーポン変更.xlsx']
 
     # 帳票設計書
     # ls = glob.glob(WORK_DIRECTORY + '\\*帳票設計書\\**\\*.xlsx', recursive=True)
-    ls = ls + [
-        'work\\15.帳票設計書\\店舗管理\\商品管理\\【機密(Ａ)】【新お届け】帳票設計書_FM19_チラシ商品Soldout表示リスト .xlsx',
-        #            'work\\15.帳票設計書\\店舗管理\\精算管理\\【機密(Ａ)】【新お届け】帳票設計書_FM01_ネットスーパー売上集計表.xlsx',
-        #            'work\\15.帳票設計書\\店舗管理\\集荷管理\\【機密(Ａ)】【新お届け】帳票設計書_FM02_お客様メモ.xlsx'
-    ]
+    # ls = ls + [
+    #     'work\\15.帳票設計書\\店舗管理\\商品管理\\【機密(Ａ)】【新お届け】帳票設計書_FM19_チラシ商品Soldout表示リスト .xlsx',
+    #     #            'work\\15.帳票設計書\\店舗管理\\精算管理\\【機密(Ａ)】【新お届け】帳票設計書_FM01_ネットスーパー売上集計表.xlsx',
+    #     #            'work\\15.帳票設計書\\店舗管理\\集荷管理\\【機密(Ａ)】【新お届け】帳票設計書_FM02_お客様メモ.xlsx'
+    # ]
 
     # メール設計書
     # ls = glob.glob(WORK_DIRECTORY + '\\*メール設計書\\**\\*.xlsx', recursive=True)
     # ls = ['work\\17.メール設計書\\スコープ管理\\メール設計書_ML08-003_衣料品番反映完了.xlsx', ]
 
-    ls = ls + [
-        'work\\17.メール設計書\\スコープ管理\\メール設計書_ML08-004_アピール文言設定反映完了.xlsx',
-    ]
+    # ls = ls + [
+    #     'work\\17.メール設計書\\スコープ管理\\メール設計書_ML08-004_アピール文言設定反映完了.xlsx',
+    # ]
 
     # 作業開始
     with ThreadPoolExecutor(max_workers=6) as pool:
@@ -785,7 +784,7 @@ if __name__ == '__main__':
     # アウトプットディレクトリのパスを生成
     OUTPUT_DIRECTORY = 'zz_markdown_' + datetime.datetime.today().strftime("%Y%m%d%H%M%S")
 
-    IS_SKIP_INIT = False   # 初回はかならずFalseで。2回目以降はめんどいからTrue（スキップする）でもよい。
+    IS_SKIP_INIT = True   # 初回はかならずFalseで。2回目以降はめんどいからTrue（スキップする）でもよい。
 
     main()
 

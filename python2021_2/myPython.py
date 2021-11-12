@@ -11,11 +11,33 @@ ORIGINAL_EXCEL_DIRECTORY = ""  # インプットディレクトリ。元ネタ�
 WORK_DIRECTORY = ""  # 作業用ディレクトリ。bakや作成中のディレクトリを削除。ここのエクセルを読み込んで、markdownを生成する。
 OUTPUT_DIRECTORY = ""  # アウトプットディレクトリ。ここにmdを生成する。
 IS_SKIP_INIT = False    # 初期化処理（init()）を実行するかどうか。スキップする場合（True）、work ディレクトリ とかを毎回やらない。めんどくさい人用。
+CSS_TEXT = ('/* 画像の区切りが見づらいとの指摘に対して黒い枠線を付与 */\n'  # style.css の中身。もうこういうファイルを用意して配布するタイプの方がいい気がしてきた。最初は数行だったんだよ。
+            'img { border: 1px black solid;}\n'
+            '\n'
+            '/* 見出しが分かりづらいとの指摘に対して各種文字飾りを付与*/\n'
+            'h1 { font-weight:bold;}\n'
+            'h2 { color: midnightblue;}\n'
+            'h3 { background-color: darkblue; font-weight:bold; color: white}\n'
+            'h4 { border: 5px lightgrey double;}\n'
+            '\n'
+            'table {border: 1px solid #e0e0e0;}\n'
+            'th {background: #f0f0f0; border-left: 1px solid #e0e0e0;}\n'
+            'td {border-left: 1px solid #e0e0e0;}\n'
+            'hr {color: midnightblue;}\n'
+            '\n'
+            'footer {\n'
+            '    background: midnightblue;\n'
+            '    color: white;\n'
+            '    padding-left: 30px;\n'
+            '    padding-right: 30px;\n'
+            '    box-sizing: border-box;\n'
+            '}'
+            )
 
 
 class ScreenDesignData:
     def __init__(self):
-        self.title = ""  # タイトル
+        self.title = ''  # タイトル
         self.history = []   # 履歴
         self.layout = {}    # レイアウト : 概要となんか
         self.layoutItems = []  # 画面項目
@@ -26,9 +48,9 @@ class ScreenDesignData:
         self.functions = {}  # 機能設計群
 
         # Markdown定型文
-        self.markdownTemplate = ('# イトーヨーカドーネットスーパー<br><br>@specTitle 画面設計書\n'
+        self.markdownTemplate = ('<link rel="stylesheet" type="text/css" href="style.css">\n'
                                  '\n'
-                                 'ver.@specVersion\n'
+                                 '# イトーヨーカドーネットスーパー<br><br>@specTitle 画面設計書\n'
                                  '\n'
                                  '株式会社ビッグツリーテクノロジー＆コンサルティング\n'
                                  '\n'
@@ -51,7 +73,7 @@ class ScreenDesignData:
                                  '## レイアウト\n'
                                  '\n'
                                  '  - 画面タイトル1  \n'
-                                 '    ![画面1](img\1.jpg)\n'
+                                 '    ![画面1](img\\1.jpg)\n'
                                  '\n'
                                  '------------------------------------------------------------------------------------------\n'
                                  '\n'
@@ -72,7 +94,7 @@ class ScreenDesignData:
                                  '\n'
                                  '------------------------------------------------------------------------------------------\n'
                                  '\n'
-                                 '## 入力チェック\n'
+                                 '## 各種チェック\n'
                                  '\n'
                                  '### 入力チェック  \n'
                                  '\n'
@@ -87,11 +109,11 @@ class ScreenDesignData:
                                  '## 機能\n'
                                  '\n'
                                  '@functions'
+                                 '\n'
+                                 '<footer>以上</footer>'
                                  )
 
-        self.markdownTemplate_functions = ('### @name\n'
-                                           '\n'
-                                           '- id : @id\n'
+        self.markdownTemplate_functions = ('### @id : @name\n'
                                            '\n'
                                            '#### 入力\n'
                                            '\n'
@@ -111,13 +133,9 @@ class ScreenDesignData:
 
     def generate_markdown(self):
 
-        # バージョン情報を履歴情報から取得。一番最後の配列の2番目の要素を固定で取得。
-        version = self.history[len(self.history) - 1][1]
-
         # マークダウン用の文字列を生成
         output_str = (self.markdownTemplate
                       .replace('@specTitle', self.title)
-                      .replace('@specVersion', str('{:.2f}'.format(round(version, 2))))  # バージョンは「##.##」の形式になるように四捨五入とフォーマットをカマす。
                       .replace('@specHistory', array_to_markdown_table(self.history, '改訂履歴'))
                       .replace('@specOverview', self.layout['Overview'])
                       .replace('@specLayoutItems', array_to_markdown_table(self.layoutItems, '画面項目'))
@@ -156,8 +174,8 @@ class ScreenDesignData:
         sorted_functions = sorted(self.functions.items(), key=lambda x: x[0])
         for k, v in sorted_functions:    # キーでソートしながら中身を取り出す。sheetNamesはシートの並び順だが、dictの順序が保証されてるか怪しかったので。
             return_str = return_str + (self.markdownTemplate_functions
-                                       .replace('@name', v['name'])
                                        .replace('@id', str(v['id'] or ''))
+                                       .replace('@name', v['name'])
                                        .replace('@input', '- ' + v['input'].replace('\n', '\n- '))
                                        .replace('@output', '- ' + v['output'].replace('\n', '\n- '))
                                        .replace('@processDetail', v['processDetail'])
@@ -175,9 +193,9 @@ class ReportData:   # 帳票設計書クラス
         self.events = []    # イベント一覧
 
         # Markdown定型文
-        self.markdownTemplate = ('# イトーヨーカドーネットスーパー<br><br>@specTitle 帳票設計書\n'
+        self.markdownTemplate = ('<link rel="stylesheet" type="text/css" href="style.css">\n'
                                  '\n'
-                                 'ver.@specVersion\n'
+                                 '# イトーヨーカドーネットスーパー<br><br>@specTitle 帳票設計書\n'
                                  '\n'
                                  '株式会社ビッグツリーテクノロジー＆コンサルティング\n'
                                  '\n'
@@ -200,7 +218,7 @@ class ReportData:   # 帳票設計書クラス
                                  '## レイアウト\n'
                                  '\n'
                                  '  - 画面タイトル1  \n'
-                                 '    ![画面1](img\1.jpg)\n'
+                                 '    ![画面1](img\\1.jpg)\n'
                                  '\n'
                                  '------------------------------------------------------------------------------------------\n'
                                  '\n'
@@ -214,17 +232,14 @@ class ReportData:   # 帳票設計書クラス
                                  '\n'
                                  '@specEvents'
                                  '\n'
+                                 '<footer>以上</footer>'
                                  )
 
     def generate_markdown(self):
 
-        # バージョン情報を履歴情報から取得。一番最後の配列の2番目の要素を固定で取得。
-        version = self.history[len(self.history) - 1][1]
-
         # マークダウン用の文字列を生成
         output_str = (self.markdownTemplate
                       .replace('@specTitle', self.title)
-                      .replace('@specVersion', str('{:.2f}'.format(round(version, 2))))  # バージョンは「##.##」の形式になるように四捨五入とフォーマットをカマす。
                       .replace('@specHistory', array_to_markdown_table(self.history, '改訂履歴'))
                       .replace('@specOverview', self.layout['Overview'])
                       .replace('@specReportItems', array_to_markdown_table(self.reportItems, '帳票項目'))
@@ -244,9 +259,9 @@ class MailData:   # メール設計書クラス
         self.sample = []    # サンプル
 
         # Markdown定型文
-        self.markdownTemplate = ('# イトーヨーカドーネットスーパー<br><br>@specTitle メール設計書\n'
+        self.markdownTemplate = ('<link rel="stylesheet" type="text/css" href="style.css">\n'
                                  '\n'
-                                 'ver.@specVersion\n'
+                                 '# イトーヨーカドーネットスーパー<br><br>@specTitle メール設計書\n'
                                  '\n'
                                  '株式会社ビッグツリーテクノロジー＆コンサルティング\n'
                                  '\n'
@@ -268,6 +283,7 @@ class MailData:   # メール設計書クラス
                                  '\n'
                                  '### メールテンプレート\n'
                                  '\n'
+                                 '※ ***[＠＠＠＠]***・・・可変項目を斜体・太字で記載。可変項目の内容はメール項目参照。\n'
                                  '@specMailTemplate\n'
                                  '\n'
                                  '------------------------------------------------------------------------------------------\n'
@@ -284,17 +300,14 @@ class MailData:   # メール設計書クラス
                                  '@specSample'
                                  '```\n'
                                  '\n'
+                                 '<footer>以上</footer>'
                                  )
 
     def generate_markdown(self):
 
-        # バージョン情報を履歴情報から取得。一番最後の配列の2番目の要素を固定で取得。
-        version = self.history[len(self.history) - 1][1]
-
         # マークダウン用の文字列を生成
         output_str = (self.markdownTemplate
                       .replace('@specTitle', self.title)
-                      .replace('@specVersion', str('{:.2f}'.format(round(version, 2))))  # バージョンは「##.##」の形式になるように四捨五入とフォーマットをカマす。
                       .replace('@specHistory', array_to_markdown_table(self.history, '改訂履歴'))
                       .replace('@specOverview', self.mailTemplate['Overview'])
                       .replace('@specMailTemplate', array_to_markdown_table(self.mailTemplate['MailTemplate'], 'メールテンプレート'))
@@ -328,10 +341,15 @@ def array_to_markdown_table(array, sheet_title):    # 配列をマークダウ�
 
         # 結合に向けての準備
         for col in range(len(arr)):
-            if isinstance(arr[col], str):
-                arr[col] = arr[col].replace('\n', '<br>')  # str 型なら 改行コード（\n）の存在に気をつけて、基本はそのまま採用。
-            elif arr[col] is None:
+            # 先頭の方はガード節やシート限定の特殊処理を記載
+            if arr[col] is None:    # ガード節
                 arr[col] = ' '    # None（値が入っていなかったセル）は「 」（半角スペース）を設定。マークダウンの表として「 」が必要なので。
+
+            elif sheet_title == '画面項目' and col == 11:  # 画面設計書の画面項目の導出元（12列目） は 改行コードがあれば改行を2つ重ねる。そういうもん。
+                arr[col] = arr[col].replace('\n', '<br><br>')  # str 型なら 改行コード（\n）の存在に気をつけて、基本はそのまま採用。
+
+            elif sheet_title == '帳票項目' and col == 10:   # 帳票設計書の帳票項目の導出元（１１列目）は 改行コードがあれば改行を2つ重ねる。そういうもん。
+                arr[col] = arr[col].replace('\n', '<br><br>')  # str 型なら 改行コード（\n）の存在に気をつけて、基本はそのまま採用。
 
             elif sheet_title == '改訂履歴' and col == 1:  # シート「改訂履歴」専用処理。
                 # なお、まれに各セルが 数値や日付 + フォーマット ではなく文字列としてそのまま書かれている状況もある。それはもうわざとやっているとみなし、先頭の分岐でそのまま採用している。
@@ -340,10 +358,20 @@ def array_to_markdown_table(array, sheet_title):    # 配列をマークダウ�
             elif sheet_title == '改訂履歴' and col == 2:
                 arr[col] = f'{arr[col]:%Y/%m/%d}'   # 日付型をフォーマットする。「2021/01/01」形式
 
+            # この辺から一般処理
+            elif isinstance(arr[col], str):
+                arr[col] = arr[col].replace('\n', '<br>')  # str 型なら 改行コード（\n）の存在に気をつけて、基本はそのまま採用。
+
             else:
                 arr[col] = str(arr[col]).replace('\n', '<br>')  # なんかわからないものはすべてstr型に変更する。改行コード（\n）の存在に気をつけて、基本はそのまま採用。
 
         s = s + '| ' + ' | '.join(arr) + ' |\n'
+
+    if sheet_title in ['入力チェック', '業務チェック']:
+        s = s + (
+            '\n'
+            '<div class="annotation">*メッセージ表示位置画面 項目項番が「－」ハイフンの場合は共通のメッセージエリアに表示する。</div>\n'
+        )
 
     return s
 
@@ -423,14 +451,12 @@ def read_sheet(wb, title):
         maxcol = maxcol + 1
 
     if ws.title == '改訂履歴':
-        # 改訂履歴だけ項目が2段になってるから2つずらすし、列も「版数」のセルを対象とする。なんか右端に段組のセル分を調整する。
-        # こいつ異フォーマットすぎて関数化しなけりゃよかった。
+        # 改訂履歴だけ項目が2段になってるから2つずらすし、列は「改定箇所」のセルを対象とする。
         r = r + 2
-        targetcol = 2
-        maxcol = maxcol + 3
+        targetcol = 5
 
         # ついでに項目ももうこっちで作っちゃう。他の表はセルを読んで自動取得+生成だけど、こいつめんどくさい。
-        list.append(['項番', '版数', '更新日付', '更新者', '改定箇所', '改定内容', '改定理由', '機能要件承認_担当者', '機能要件承認_第三者', '非機能要件承認_担当者', '非機能要件承認_第三者'])
+        list.append(['項番', '版数', '更新日付', '更新者', '改定箇所', '改定内容', '改定理由'])
 
     while ws.cell(r, targetcol).value is not None:  # 行 ： 空っぽのセルが出てくるまでループする。
         list.append([ws.cell(r, n).value for n in range(1, maxcol)])  # 列「A」から「maxcol」までを1行分の列ループ。ちなみに空のセルは「None」が入る。
@@ -595,13 +621,50 @@ def read_sheets_for_mail(title, wb):
             row = row + 1
 
         # 送信元(From) のタイトルを固定で取得する。「 」「項目」「繰返」「備考」の4つ
-        array = [[' ', '項目', '繰返', '備考']]
+        table_array = [[' ', '項目', '繰返', '備考']]
+
+        # []探索用関数
+        def search_func(s, pos_start):
+            b = s.find(']', pos_start)
+            a = s.rfind('[', pos_start, b)
+            return a, b
 
         # 表全部を取得する
-        for rowdata in ws.iter_rows(min_row=row, max_row=ws.max_row, min_col=1, max_col=4):  # 行の内容を指定の範囲で 1セルずつ取得。数値とかが入ってても困るので文字列にキャストする。
-            array.append([str(cell.value) if cell.value is not None else ' ' for cell in rowdata])
+        for rowdata in ws.iter_rows(min_row=row, max_row=ws.max_row, min_col=1, max_col=4):  # 行の内容を指定の範囲で 1行ずつ取得。
+            row_array = []
+            # array.append([str(cell.value) if cell.value is not None else ' ' for cell in rowdata])
 
-        dict['MailTemplate'] = array
+            for i, cell in enumerate(rowdata):    # 行データから1セルずつ取得
+
+                if i == 1 and cell.value is not None:
+                    # まず[]に挟まれた単語の一覧を取得する
+                    sb_list = []  # 角カッコのSquareBrackets用配列
+                    v = str(cell.value)  # v は cell.value の v
+                    pos_start = 0
+                    while True:
+
+                        pos_start, pos_end = search_func(v, pos_start)
+
+                        if pos_end == -1:
+                            break
+                        elif pos_start == -1:
+                            pos_start = pos_end + 1
+                            continue
+                        else:
+                            sb_list.append(v[pos_start + 1:pos_end])
+                            pos_start = pos_end + 1
+
+                    # その一覧を太字斜体に装飾する
+                    for s in sb_list:
+                        v = v.replace('[' + s + ']', '***[' + s + ']***')
+
+                    row_array.append(v)
+                else:
+                    row_array.append(str(cell.value) if cell.value is not None else ' ')
+
+            table_array.append(row_array)
+
+        dict['MailTemplate'] = table_array
 
     read_mail_template(wb['メールテンプレート'], d.mailTemplate)    # メールテンプレート読み込み
 
@@ -610,8 +673,10 @@ def read_sheets_for_mail(title, wb):
     # サンプル読み込み関数 : 関数化した意味 → 字下げかつエディタ上で閉じれるという自分用可読性だけ。使い回す予定なし。
     def read_mail_sample(ws, array):
 
-        for row in range(1, ws.max_row):
+        for row in range(1, ws.max_row + 1):
             array.append(str(ws.cell(row, 1).value) if ws.cell(row, 1).value is not None else '')
+
+        array.append('\n')
 
     read_mail_sample(wb['サンプル'], d.sample)
 
@@ -628,7 +693,7 @@ def convert_thread(file):
 
     # 各設計書用の読み込み関数を関数オブジェクトとして利用する。
     func = None
-    file_name = os.path.basename(file)
+    # file_name = os.path.basename(file)
     if '画面設計書_' in file:
         func = read_sheets_for_screen_design
     elif '帳票設計書_' in file:
@@ -637,12 +702,12 @@ def convert_thread(file):
         func = read_sheets_for_mail
 
     else:
-        print('■ error - noFunc : ' + file)
+        print('■ NoMatchFileName : ' + file)
         return
 
     d = None
     try:
-        d = func(file[file.rfind('_') + 1: file.rfind('.')], wb)  # エクセルの各シート読み込み
+        d = func(file[file.find('_') + 1: file.rfind('.')], wb)  # エクセルの各シート読み込み
     except shutil.Error:
         print('■ error : ' + file)
         return
@@ -653,10 +718,13 @@ def convert_thread(file):
     dir_path = os.path.dirname(dir_path) + os.sep + file_name  # ↑のファイル名を付与したディレクトリにする。階層深くなるけどそういうもの。
     os.makedirs(dir_path + os.sep + 'img', exist_ok=True)    # img の階層まで一気にディレクトリ作成
 
+    # css ファイル作成
+    with open(dir_path + os.sep + 'style.css', mode='w', encoding='utf-8_sig') as f:
+        f.write(CSS_TEXT)
+
     # md生成
     output_file_name = dir_path + os.sep + file_name + '.md'
     with open(output_file_name, mode='w', encoding='utf-8_sig') as f:
-        # for s in md:
         f.write(d.generate_markdown() + '\n')
 
 
@@ -664,20 +732,25 @@ def exec():
     print('\n★★ 本処理 - start')
 
     # エクセルファイルの一覧を取得（or 指定）して順次読み込み。なんにせよリスト型になってればOK
-
     # 画面設計書
     # ls = glob.glob(WORK_DIRECTORY + '\\*画面設計書\\**\\*.xlsx', recursive=True)
-    # ls = ['work\\06.画面設計書\\共通パーツデザイン\\画面設計書_SC02-04-01_共通パーツデザイン（店舗・配送拠点）.xlsx',]
-    # ls = ['work\\画面設計書_機能設計_サンプル.xlsx']
+    ls = ['work\\06.画面設計書\\本部管理\\商品値引管理\\画面設計書_SC07-13-01_クーポン変更.xlsx']
 
     # 帳票設計書
     # ls = glob.glob(WORK_DIRECTORY + '\\*帳票設計書\\**\\*.xlsx', recursive=True)
-    # ls = ls + ['work\\15.帳票設計書\\店舗管理\\商品管理\\0019_【機密(Ａ)】【新お届け】帳票設計書_チラシ商品 Soldout表示リスト .xlsx',
-    #            'work\\15.帳票設計書\\店舗管理\\精算管理\\0001_【機密(Ａ)】【新お届け】帳票設計書_ネットスーパー売上集計表.xlsx',
-    #            'work\\15.帳票設計書\\店舗管理\\集荷管理\\0002_【機密(Ａ)】【新お届け】帳票設計書_お客様メモ.xlsx']
+    # ls = ls + [
+    #     'work\\15.帳票設計書\\店舗管理\\商品管理\\【機密(Ａ)】【新お届け】帳票設計書_FM19_チラシ商品Soldout表示リスト .xlsx',
+    #     #            'work\\15.帳票設計書\\店舗管理\\精算管理\\【機密(Ａ)】【新お届け】帳票設計書_FM01_ネットスーパー売上集計表.xlsx',
+    #     #            'work\\15.帳票設計書\\店舗管理\\集荷管理\\【機密(Ａ)】【新お届け】帳票設計書_FM02_お客様メモ.xlsx'
+    # ]
 
     # メール設計書
-    ls = glob.glob(WORK_DIRECTORY + '\\*メール設計書\\**\\*.xlsx', recursive=True)
+    # ls = glob.glob(WORK_DIRECTORY + '\\*メール設計書\\**\\*.xlsx', recursive=True)
+    # ls = ['work\\17.メール設計書\\スコープ管理\\メール設計書_ML08-003_衣料品番反映完了.xlsx', ]
+
+    # ls = ls + [
+    #     'work\\17.メール設計書\\スコープ管理\\メール設計書_ML08-004_アピール文言設定反映完了.xlsx',
+    # ]
 
     # 作業開始
     with ThreadPoolExecutor(max_workers=6) as pool:
@@ -709,9 +782,9 @@ if __name__ == '__main__':
     # ワークディレクトリのパスを生成
     WORK_DIRECTORY = 'work'
     # アウトプットディレクトリのパスを生成
-    OUTPUT_DIRECTORY = 'zz.markdown_' + datetime.datetime.today().strftime("%Y%m%d%H%M%S")
+    OUTPUT_DIRECTORY = 'zz_markdown_' + datetime.datetime.today().strftime("%Y%m%d%H%M%S")
 
-    IS_SKIP_INIT = False   # 初回はかならずFalseで。2回目以降はめんどいからTrue（スキップする）でもよい。
+    IS_SKIP_INIT = True   # 初回はかならずFalseで。2回目以降はめんどいからTrue（スキップする）でもよい。
 
     main()
 

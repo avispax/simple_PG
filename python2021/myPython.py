@@ -370,7 +370,7 @@ def generateMarkdown(files, diffData, startDateTime):
     outputFileName = 'myDiff_' + startDateTime.strftime("%Y%m%d%H%M%S") + '.md'
 
     # ファイルサマリを生成する。
-    md = ['# diff : ' + files[0][files[0].rfind('\\')+1:] + ' - ' + files[1][files[1].rfind('\\')+1:] +
+    md = ['# diff : ' + files[0][files[0].rfind('\\') + 1:] + ' - ' + files[1][files[1].rfind('\\') + 1:] +
           ' : ' + startDateTime.strftime("%Y/%m/%d %H:%M:%S")]
     md.append('')
     md.append('- ファイルその1 : ' + files[0])

@@ -1,0 +1,42 @@
+﻿/* 画像の区切りが見づらいとの指摘に対して黒い枠線を付与 */
+img {
+  border: 1px black solid;
+}
+
+/* 見出しが分かりづらいとの指摘に対して各種文字飾りを付与*/
+h1 {
+  font-weight: bold;
+}
+h2 {
+  color: midnightblue;
+}
+h3 {
+  background-color: darkblue;
+  font-weight: bold;
+  color: white;
+}
+h4 {
+  border: 5px lightgrey double;
+}
+
+table {
+  border: 1px solid #e0e0e0;
+}
+th {
+  background: #f0f0f0;
+  border-left: 1px solid #e0e0e0;
+}
+td {
+  border-left: 1px solid #e0e0e0;
+}
+hr {
+  color: midnightblue;
+}
+
+footer {
+  background: midnightblue;
+  color: white;
+  padding-left: 30px;
+  padding-right: 30px;
+  box-sizing: border-box;
+}

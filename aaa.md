@@ -24,7 +24,10 @@ msiexec /i AWSCloudHSMClient-latest.msi
 
 ### 3. 実行後確認
 
+以下ディレクトリが作成されていること。
 
+1. C:\Program Files\Amazon\CloudHSM
+2. C:\ProgramData\Amazon\CloudHSM
 
 ## 他
 

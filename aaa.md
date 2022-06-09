@@ -1,6 +1,13 @@
 # AWSCloudHSM を windows で使う方法
 
-## AWSCloudHSM クライアントインストール
+以下の手順を実施する。
+
+1. AWS CloudHSM client のインストール
+2. JCE provider のインストール
+
+## 1. AWSCloudHSM クライアントインストール
+
+公式サイトからインストーラーをダウンロードし、それをインストールする。
 
 ### 1. 以下からインストーラーを取得
 
@@ -29,7 +36,23 @@ msiexec /i AWSCloudHSMClient-latest.msi
 1. C:\Program Files\Amazon\CloudHSM
 2. C:\ProgramData\Amazon\CloudHSM
 
-## 他
+## 2. JCE provider のインストール
+
+JCE provider をインストールする必要があるが、Windowsにはインストーラーがない。  
+
+- [公式サイト](https://docs.aws.amazon.com/cloudhsm/latest/userguide/java-library-install.html)
+
+公式サイトには rpm が置いてあるので、いったんダウンロードしてから windows 上で展開する。
+
+- [rpm の アドレス](https://s3.amazonaws.com/cloudhsmv2-software/CloudHsmClient/EL7/cloudhsm-client-jce-latest.el7.x86_64.rpm)
+
+rpm は windows 標準搭載の 7zip で開けば中身が見れるし展開できるので、フツーに取り出す。
+
+## 3. Windows 環境に、ライブラリを認識させる。
+
+あああ
+
+## 99. 他
 
 - https://www.fixes.pub/program/805579.html
--   https://docsplayer.net/82960151-Aws-cloudhsm-%E3%83%A6%E3%83%BC%E3%82%B6%E3%83%BC%E3%82%AC%E3%82%A4%E3%83%89.html
+- https://docsplayer.net/82960151-Aws-cloudhsm-%E3%83%A6%E3%83%BC%E3%82%B6%E3%83%BC%E3%82%AC%E3%82%A4%E3%83%89.html

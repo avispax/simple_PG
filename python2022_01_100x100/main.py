@@ -39,7 +39,7 @@ def main():
                      'seId': 'A00143',
                      'spAppleId': 'SATZ1Z01',
                      'needMoreProcess': False,
-                     'previousProcessId': 'null',
+                     'previousProcessId': None,
                      'apduCommandInfoList': generate_json()
                      }
          }

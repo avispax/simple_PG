@@ -5,6 +5,7 @@ import (
 	"myGo/mypkg"
 )
 
+// 別パッケージは go module(go.mod)を使うとラク。
 func myFunc1() {
 
 	aaa := mypkg.MyStruct{111, 222}

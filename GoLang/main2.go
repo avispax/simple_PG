@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"myGo/myTst"
 	"myGo/mypkg"
+	"reflect"
+	"strconv"
 )
 
 // 別パッケージは go module(go.mod)を使うとラク。
@@ -34,7 +36,14 @@ type Points []*Point
 func myFunc3() {
 	ps := Points{}
 	ps = append(ps, &Point{x: 1, y: 2})
-	fmt.Println(ps) // 別に何がしたいわけでもない
+	ps = append(ps, &Point{x: 888, y: 999})
+	// fmt.Println(ps) // 別に何がしたいわけでもない
+
+	fmt.Println(reflect.TypeOf(ps))
+
+	for i, v := range ps {
+		fmt.Println(i, v)
+	}
 }
 
 type MyError struct {
@@ -160,6 +169,66 @@ func myFunc9() {
 
 }
 
+func myFunc10() {
+	var limit int32 = 10000
+	var offset int32 = 0
+
+	fmt.Println("result_" + strconv.Itoa(int(offset)) + "_" + strconv.Itoa(int(limit)) + ".txt")
+
+}
+
+func myFunc11() {
+	i := 0
+	for i < 10 {
+		fmt.Println(i)
+		i++
+	}
+}
+
+func myFunc12_1(n *int) int {
+	// get next char です。
+	*n++
+
+	// if *n == 34 {
+	// 	*n = 35
+	// } else if *n == 40 {
+	// 	*n = 42
+	// } else if *n == 44 {
+	// 	*n = 45
+	// } else if *n == 46 {
+	// 	*n = 47
+	// } else if *n == 58 {
+	// 	*n = 61
+	// } else if *n == 62 {
+	// 	*n = 63
+	// } else if *n == 64 {
+	// 	*n = 65
+	// } else if *n == 91 {
+	// 	*n = 94
+	// } else if *n == 127 {
+	// 	*n = -1
+	// }
+
+	if *n == 128 {
+		*n = -1
+	}
+
+	return *n
+}
+
+func myFunc12() {
+
+	for n := 32; n < 128; n++ {
+		fmt.Println(string(n))
+	}
+
+	s := "0123456789"
+	s += "abcdefghijklmnopqrstuvwxyz"
+	s += "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	s += "!#$%&'*+-/=?^_`{|}~"
+
+}
+
 func main() {
 	// myFunc1() // 別パッケージもの
 	// myFunc2() // 構造体
@@ -170,6 +239,9 @@ func main() {
 	// myFunc7() // インターフェイス4 : 多重実装行けるか？
 	// myFunc8() // テスト関連
 
-	myFunc9() // []byte と string
+	// myFunc9() // []byte と string
+	// myFunc10() // なんか文字列操作 result_int32.txtみたいな。
+	// myFunc11() // for の終了条件だけでOKかどうか。
+	myFunc12() // ascii 使えるかどうか
 
 }

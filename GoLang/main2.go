@@ -219,13 +219,22 @@ func myFunc12_1(n *int) int {
 func myFunc12() {
 
 	for n := 32; n < 128; n++ {
-		fmt.Println(string(n))
+		// fmt.Println(string(n))
+		fmt.Println(fmt.Sprint(n))
 	}
 
-	s := "0123456789"
-	s += "abcdefghijklmnopqrstuvwxyz"
-	s += "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-	s += "!#$%&'*+-/=?^_`{|}~"
+	// s := "0123456789"
+	// s += "abcdefghijklmnopqrstuvwxyz"
+	// s += "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	// s += "!#$%&'*+-/=?^_`{|}~"
+
+}
+
+func myFunc13() {
+
+	aaa := "aiueo"
+	bbb := map[string]int{"apple": 150, "banana": 300, "lemon": 300}
+	fmt.Println(fmt.Errorf("%s deleted records exists.%+v", aaa, bbb))
 
 }
 
@@ -242,6 +251,7 @@ func main() {
 	// myFunc9() // []byte と string
 	// myFunc10() // なんか文字列操作 result_int32.txtみたいな。
 	// myFunc11() // for の終了条件だけでOKかどうか。
-	myFunc12() // ascii 使えるかどうか
+	// myFunc12() // ascii 使えるかどうか
+	myFunc13() // ログ
 
 }

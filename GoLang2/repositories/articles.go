@@ -17,6 +17,7 @@ const (
 func InsertArticles(db *sql.DB, article models.Article) (models.Article, error) {
 	const sqlStr = `insert into articles(title, contents, username, nice, created_at) values (?,?,?,0,now());`
 
+	// SQL実行
 	result, err := db.Exec(sqlStr, article.Title, article.Contents, article.UserName)
 	if err != nil {
 		log.Fatal(err)
@@ -36,8 +37,9 @@ func InsertArticles(db *sql.DB, article models.Article) (models.Article, error) 
 }
 
 func SelectArticleList(db *sql.DB, page int) ([]models.Article, error) {
-	const sqlStr = `select article_id, title, contents, username, nice from article limit ? offset ?;`
+	const sqlStr = `select article_id, title, contents, username, nice from articles limit ? offset ?;`
 
+	// SQL 実行 複数件の場合はQueryを使う
 	rows, err := db.Query(sqlStr, articleNumPerPage, ((page - 1) * articleNumPerPage))
 	if err != nil {
 		log.Fatal(err)
@@ -56,8 +58,9 @@ func SelectArticleList(db *sql.DB, page int) ([]models.Article, error) {
 }
 
 func SelectArticleDetail(db *sql.DB, articleId int) (models.Article, error) {
-	const sqlStr = `select * from article where article_id = ?;`
+	const sqlStr = `select * from articles where article_id = ?;`
 
+	// SQL実行 1件確定のレコードはQueryRowを使う。ID指定のときなど。
 	row := db.QueryRow(sqlStr, articleId)
 	if err := row.Err(); err != nil {
 		log.Fatal(err)
@@ -79,7 +82,7 @@ func SelectArticleDetail(db *sql.DB, articleId int) (models.Article, error) {
 }
 
 func UpdateNiceNum(db *sql.DB, articleId int) error {
-	const sqlGetNice = `SELECT nice from article where article_id = ?;`
+	const sqlGetNice = `SELECT nice from articles where article_id = ?;`
 
 	row := db.QueryRow(sqlGetNice, articleId)
 	if err := row.Err(); err != nil {
@@ -99,7 +102,7 @@ func UpdateNiceNum(db *sql.DB, articleId int) error {
 		return err
 	}
 
-	const sqlUpdateNice = `UPDATE article SET nice = ? WHERE article_id = ?;`
+	const sqlUpdateNice = `UPDATE articles SET nice = ? WHERE article_id = ?;`
 	result, err := db.Exec(sqlUpdateNice, niceNum+1, articleId)
 	if err != nil {
 		tx.Rollback()

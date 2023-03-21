@@ -17,7 +17,7 @@ func HelloHandler(w http.ResponseWriter, req *http.Request) {
 
 func PostArticleHandler(w http.ResponseWriter, req *http.Request) {
 
-	// リクエストから内容をJSONで読み込む
+	// リクエストのBodyから投稿内容をJSONで読み込む
 	var reqArticle models.Article
 	if err := json.NewDecoder(req.Body).Decode(&reqArticle); err != nil {
 		http.Error(w, "fail to decode json.\n", http.StatusBadRequest)

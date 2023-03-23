@@ -3,47 +3,70 @@
 package repositories_test
 
 import (
-	"database/sql"
 	"fmt"
-	"reflect"
+	"log"
+	"strconv"
 	"testing"
+	"time"
 
 	"github.com/avispax/simple_PG/GoLang2/models"
 	"github.com/avispax/simple_PG/GoLang2/repositories"
+	"github.com/avispax/simple_PG/GoLang2/repositories/testdata"
+	"github.com/stretchr/testify/assert"
 
 	_ "github.com/go-sql-driver/mysql"
 )
 
 func TestInsertArticles(t *testing.T) {
-	type args struct {
-		db      *sql.DB
-		article models.Article
+
+	// 初期処理。DBを空っぽに。
+	if err := clearArticleRecord(); err != nil {
+		t.Fatalf("clear Error")
+		return
 	}
+
+	// test
 	tests := []struct {
 		name    string
-		args    args
 		want    models.Article
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name:    "1",
+			want:    testdata.ArticleTestData[0],
+			wantErr: false,
+		},
+		{
+			name:    "2",
+			want:    testdata.ArticleTestData[1],
+			wantErr: false,
+		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := repositories.InsertArticles(tt.args.db, tt.args.article)
+			got, err := repositories.InsertArticles(testDB, tt.want)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("InsertArticles() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("InsertArticles() = %v, want %v", got, tt.want)
-			}
+			assert.Equal(t, tt.want.ID, got.ID)
+			assert.Equal(t, tt.want.Contents, got.Contents)
+			assert.Equal(t, tt.want.UserName, got.UserName)
+			assert.Equal(t, 0, got.NiceNum)
 		})
 	}
 }
 
 func TestSelectArticleList(t *testing.T) {
+	// 初期処理。
+	expect, err := initArticles()
+	if err != nil {
+		t.Fatalf("init Error")
+		return
+	}
+
 	type args struct {
-		db   *sql.DB
 		page int
 	}
 	tests := []struct {
@@ -52,34 +75,36 @@ func TestSelectArticleList(t *testing.T) {
 		want    []models.Article
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "1",
+			args: args{
+				page: 1,
+			},
+			want:    expect,
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := repositories.SelectArticleList(tt.args.db, tt.args.page)
+			got, err := repositories.SelectArticleList(testDB, tt.args.page)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("SelectArticleList() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("SelectArticleList() = %v, want %v", got, tt.want)
-			}
+			assert.Equal(t, len(got), len(tt.want))
 		})
 	}
 }
 
 func TestSelectArticleDetail(t *testing.T) {
-	// 上記の構造体で色々やるのも面倒だったので、ここでいったん定義する。
-	dbConn := fmt.Sprintf("%s:%s@tcp(127.0.0.1:3306)/%s?parseTime=true", "docker",
-		"docker", "sampledb")
-	db, err := sql.Open("mysql", dbConn)
+	// 初期処理。
+	expect, err := initArticles()
 	if err != nil {
-		t.Fatal(err)
+		t.Fatalf("init Error")
+		return
 	}
-	defer db.Close()
 
 	type args struct {
-		db        *sql.DB
 		articleId int
 	}
 	tests := []struct {
@@ -91,46 +116,25 @@ func TestSelectArticleDetail(t *testing.T) {
 		{
 			name: "1",
 			args: args{
-				db:        nil,
 				articleId: 1,
 			},
-			want: models.Article{
-				ID:       1,
-				Title:    "firstPost",
-				Contents: "This is my first blog",
-				UserName: "saki",
-				NiceNum:  3,
-			},
+			want:    expect[0],
 			wantErr: false,
 		},
 		{
 			name: "2",
 			args: args{
-				db:        nil,
 				articleId: 2,
 			},
-			want: models.Article{
-				ID:       2,
-				Title:    "se",
-				Contents: "second",
-				UserName: "omy",
-				NiceNum:  4,
-			},
+			want:    expect[1],
 			wantErr: false,
 		},
 		{
 			name: "3",
 			args: args{
-				db:        nil,
 				articleId: 3,
 			},
-			want: models.Article{
-				ID:       3,
-				Title:    "title3",
-				Contents: "contents3",
-				UserName: "username3",
-				NiceNum:  0,
-			},
+			want:    expect[2],
 			wantErr: false,
 		},
 	}
@@ -138,59 +142,131 @@ func TestSelectArticleDetail(t *testing.T) {
 
 		t.Run(tt.name, func(t *testing.T) {
 
-			tt.args.db = db // で、付け替える。
-
-			// ここから generator 通り。
-			got, err := repositories.SelectArticleDetail(tt.args.db, tt.args.articleId)
+			got, err := repositories.SelectArticleDetail(testDB, tt.args.articleId)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("SelectArticleDetail() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 
-			if got.ID != tt.want.ID {
-				t.Errorf("id : get %d but want %d\n", got.ID, tt.want.ID)
-			}
-
-			if got.Title != tt.want.Title {
-				t.Errorf("Title : get %s but want %s\n", got.Title, tt.want.Title)
-			}
-
-			if got.Contents != tt.want.Contents {
-				t.Errorf("Contents : get %s but want %s\n", got.Contents, tt.want.Contents)
-			}
-
-			if got.UserName != tt.want.UserName {
-				t.Errorf("UserName : get %s but want %s\n", got.UserName, tt.want.UserName)
-			}
-
-			if got.NiceNum != tt.want.NiceNum {
-				t.Errorf("NiceNum : get %d but want %d\n", got.NiceNum, tt.want.NiceNum)
-			}
-
-			// if !reflect.DeepEqual(got, tt.want) {
-			// 	t.Errorf("SelectArticleDetail() = %v, want %v", got, tt.want)
-			// }
+			// check
+			assert.Equal(t, tt.want.ID, got.ID)
+			assert.Equal(t, tt.want.Title, got.Title)
+			assert.Equal(t, tt.want.Contents, got.Contents)
+			assert.Equal(t, tt.want.UserName, got.UserName)
+			assert.Equal(t, tt.want.NiceNum, got.NiceNum)
+			// assert.Equal(t, tt.want.CreatedAt, got.CreatedAt)
 		})
 	}
 }
 
 func TestUpdateNiceNum(t *testing.T) {
+	// 初期処理。
+	expect, err := initArticles()
+	if err != nil {
+		t.Fatalf("init Error")
+		return
+	}
+
 	type args struct {
-		db        *sql.DB
 		articleId int
 	}
 	tests := []struct {
 		name    string
 		args    args
+		want    models.Article
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "1",
+			args: args{
+				articleId: 1,
+			},
+			want:    expect[0],
+			wantErr: false,
+		},
+		{
+			name: "2",
+			args: args{
+				articleId: 99,
+			},
+			want:    expect[1],
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := repositories.UpdateNiceNum(tt.args.db, tt.args.articleId); (err != nil) != tt.wantErr {
+			if err := repositories.UpdateNiceNum(testDB, tt.args.articleId); (err != nil) != tt.wantErr {
 				t.Errorf("UpdateNiceNum() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
+}
+
+// clear -> insert
+func initArticles() ([]models.Article, error) {
+	if err := clearArticleRecord(); err != nil {
+		return []models.Article{}, err
+	}
+
+	expect, err := insertArticleRecord()
+	if err != nil {
+		return []models.Article{}, err
+	}
+	return expect, nil
+}
+
+// only clear
+func clearArticleRecord() error {
+	const sql0 = `DELETE FROM comments;`
+	_, err := testDB.Exec(sql0)
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+
+	const sql = `DELETE FROM articles;`
+	_, err = testDB.Exec(sql)
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+
+	const sql2 = `ALTER TABLE articles auto_increment = 1;`
+	_, err = testDB.Exec(sql2)
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+
+	return nil
+}
+
+// only insert. 3records.
+func insertArticleRecord() ([]models.Article, error) {
+	const sqlStr = `insert into articles(title, contents, username, nice, created_at) values (?,?,?,?,?);`
+
+	articles := make([]models.Article, 0)
+
+	for i := 0; i < 3; i++ {
+		si := strconv.Itoa(i)
+		article := models.Article{
+			ID:        i + 1,
+			Title:     "title_" + si,
+			Contents:  "content_" + si,
+			UserName:  "username_" + si,
+			NiceNum:   i,
+			CreatedAt: time.Now(),
+		}
+
+		// SQL実行
+		_, err := testDB.Exec(sqlStr, article.Title, article.Contents, article.UserName, i, article.CreatedAt)
+		if err != nil {
+			log.Print(err)
+			return []models.Article{}, err
+		}
+
+		articles = append(articles, article)
+	}
+
+	return articles, nil
 }
